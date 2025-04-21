@@ -15,7 +15,9 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String COLUMN_EMAIL = "email";
     private static final String COLUMN_USERNAME = "username";
     private static final String COLUMN_PASSWORD = "password";
-
+    private static final String COLUMN_FULL_NAME   = "full_name";
+    private static final String COLUMN_AGE         = "age";
+    private static final String COLUMN_IMAGE_URI   = "image_uri";
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -26,7 +28,10 @@ public class DBHelper extends SQLiteOpenHelper {
                 + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + COLUMN_USERNAME + " TEXT UNIQUE,"
                 + COLUMN_EMAIL + " TEXT UNIQUE,"
-                + COLUMN_PASSWORD + " TEXT"
+                + COLUMN_PASSWORD + " TEXT,"
+                + COLUMN_FULL_NAME + " TEXT,"
+                + COLUMN_AGE + " INTEGER,"
+                + COLUMN_IMAGE_URI + " TEXT"
                 + ")";
         db.execSQL(CREATE_USERS_TABLE);
     }
@@ -65,5 +70,37 @@ public class DBHelper extends SQLiteOpenHelper {
         cursor.close();
         db.close();
         return exists;
+    }
+
+    /**
+     * Update the profile fields for a user identified by email.
+     * @return true if at least one row was updated.
+     */
+    public boolean updateProfile(String email, String fullName, int age, String imageUri) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_FULL_NAME, fullName);
+        values.put(COLUMN_AGE,         age);
+        values.put(COLUMN_IMAGE_URI,   imageUri);
+        // update the row where email matches
+        int rows = db.update(
+                TABLE_USERS,
+                values,
+                COLUMN_EMAIL + " = ?",
+                new String[]{ email }
+        );
+        db.close();
+        return rows > 0;
+    }
+
+    public Cursor getUserProfile(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.query(
+                TABLE_USERS,
+                new String[]{COLUMN_FULL_NAME, COLUMN_AGE, COLUMN_IMAGE_URI},
+                COLUMN_EMAIL + " = ?",
+                new String[]{ email },
+                null, null, null
+        );
     }
 }

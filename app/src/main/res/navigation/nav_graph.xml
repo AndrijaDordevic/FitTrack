@@ -34,7 +34,6 @@
             app:destination="@id/profileSetupFragment"/>
     </fragment>
 
-    <!-- optional profile-setup -->
     <fragment
         android:id="@+id/profileSetupFragment"
         android:name="com.myapp.fitnessapp.fragments.ProfileSetUpFragment"
@@ -42,20 +41,62 @@
         <argument
             android:name="email"
             app:argType="string" />
-
         <argument
             android:name="username"
             app:argType="string" />
         <action
             android:id="@+id/action_profile_to_dashboard"
             app:destination="@id/dashboardFragment"/>
-
     </fragment>
 
-    <!-- After onboarding lands here: -->
+    <!-- Dashboard and its outgoing actions -->
     <fragment
         android:id="@+id/dashboardFragment"
         android:name="com.myapp.fitnessapp.fragments.DashboardFragment"
-        android:label="Dashboard"/>
+        android:label="Dashboard">
+
+        <!-- Navigation from Dashboard to each feature fragment -->
+        <action
+            android:id="@+id/action_dashboard_to_workoutLogging"
+            app:destination="@id/workoutLoggingFragment"/>
+        <action
+            android:id="@+id/action_dashboard_to_exerciseLibrary"
+            app:destination="@id/exerciseLibraryFragment"/>
+        <action
+            android:id="@+id/action_dashboard_to_workoutPlanner"
+            app:destination="@id/workoutPlannerFragment"/>
+        <action
+            android:id="@+id/action_dashboard_to_progress"
+            app:destination="@id/progressFragment"/>
+        <action
+            android:id="@+id/action_dashboard_to_timer"
+            app:destination="@id/timerFragment"/>
+    </fragment>
+
+    <!-- New feature fragments -->
+    <fragment
+        android:id="@+id/workoutLoggingFragment"
+        android:name="com.myapp.fitnessapp.fragments.WorkoutLoggingFragment"
+        android:label="Workout Logging" />
+
+    <fragment
+        android:id="@+id/exerciseLibraryFragment"
+        android:name="com.myapp.fitnessapp.fragments.ExerciseLibraryFragment"
+        android:label="Exercise Library" />
+
+    <fragment
+        android:id="@+id/workoutPlannerFragment"
+        android:name="com.myapp.fitnessapp.fragments.WorkoutPlannerFragment"
+        android:label="Workout Planner" />
+
+    <fragment
+        android:id="@+id/progressFragment"
+        android:name="com.myapp.fitnessapp.fragments.ProgressFragment"
+        android:label="Progress" />
+
+    <fragment
+        android:id="@+id/timerFragment"
+        android:name="com.myapp.fitnessapp.fragments.TimerFragment"
+        android:label="Timer" />
 
 </navigation>

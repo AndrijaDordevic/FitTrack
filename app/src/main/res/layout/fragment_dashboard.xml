@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scroll_dashboard"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFA"
+    android:padding="16dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Dashboard Title -->
+
+        <!-- Subtitle Text -->
+
+        <!-- Workout Logging Card -->
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="22dp"
+            android:gravity="start"
+            android:paddingBottom="8dp"
+            android:text="FitTrack"
+            android:textSize="24sp"
+            android:textColor="#000000"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tvTitle"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:layout_centerHorizontal="true"
+            android:paddingBottom="16dp"
+            android:text="DASHBOARD"
+            android:textStyle= "bold"
+            android:textColor="#000000"
+        android:textSize="18sp" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardWorkoutLogging"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_below="@id/tvSubtitle"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="12dp">
+
+                <!-- Image -->
+                <ImageView
+                    android:id="@+id/imgWorkoutLogging"
+                    android:layout_width="45dp"
+                    android:layout_height="52dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/workout_board" />
+
+                <!-- Text Layout -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toEndOf="@id/imgWorkoutLogging"
+                    android:layout_marginStart="24dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="start">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="WORKOUT LOGGING"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:gravity="start"
+                        android:textColor="#000000"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Log your sets, reps, and weight"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                    android:gravity="start" />
+                </LinearLayout>
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Exercise Library Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardExerciseLibrary"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_below="@id/cardWorkoutLogging"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="12dp">
+
+                <!-- Image -->
+                <ImageView
+                    android:id="@+id/imgExerciseLibrary"
+                    android:layout_width="45dp"
+                    android:layout_height="52dp"
+                    android:src="@drawable/library"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true" />
+
+                <!-- Text Layout -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toEndOf="@id/imgExerciseLibrary"
+                    android:layout_marginStart="24dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="start">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="EXERCISE LIBRARY"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:gravity="start"
+                        android:textColor="#000000"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Browse exercises by category"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                    android:gravity="start" />
+                </LinearLayout>
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Workout Planner Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardWorkoutPlanner"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_below="@id/cardExerciseLibrary"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="12dp">
+
+                <!-- Image -->
+                <ImageView
+                    android:id="@+id/imgWorkoutPlanner"
+                    android:layout_width="45dp"
+                    android:layout_height="52dp"
+                    android:src="@drawable/calendar"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true" />
+
+                <!-- Text Layout -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toEndOf="@id/imgWorkoutPlanner"
+                    android:layout_marginStart="24dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="start">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="WORKOUT PLANNER"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:gravity="start"
+                        android:textColor="#000000"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Create your weekly workouts"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                    android:gravity="start" />
+                </LinearLayout>
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Progress Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardProgress"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_below="@id/cardWorkoutPlanner"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="12dp">
+
+                <!-- Image -->
+                <ImageView
+                    android:id="@+id/imgProgress"
+                    android:layout_width="45dp"
+                    android:layout_height="52dp"
+                    android:src="@drawable/progress"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true" />
+
+                <!-- Text Layout -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toEndOf="@id/imgProgress"
+                    android:layout_marginStart="24dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="start">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="PROGRESS"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:gravity="start"
+                        android:textColor="#000000"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="View your charts and stats"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                    android:gravity="start" />
+                </LinearLayout>
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Timer Button -->
+        <ImageButton
+            android:id="@+id/btnTimer"
+            android:layout_width="218dp"
+            android:layout_height="186dp"
+            android:layout_below="@id/cardProgress"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="19dp"
+            android:background="@null"
+            android:contentDescription="Timer Button"
+            android:scaleType="fitCenter"
+            android:src="@drawable/timer_button" />
+        <!-- Timer Label -->
+        <TextView
+            android:id="@+id/tvTimerLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/btnTimer"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:text="Timer"
+            android:textSize="24sp"
+            android:textColor="#000000"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
+</ScrollView>
