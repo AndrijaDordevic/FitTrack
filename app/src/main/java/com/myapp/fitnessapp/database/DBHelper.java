@@ -13,6 +13,7 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_EMAIL = "email";
+    private static final String COLUMN_USERNAME = "username";
     private static final String COLUMN_PASSWORD = "password";
 
     public DBHelper(Context context) {
@@ -23,6 +24,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         String CREATE_USERS_TABLE = "CREATE TABLE " + TABLE_USERS + " ("
                 + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_USERNAME + " TEXT UNIQUE,"
                 + COLUMN_EMAIL + " TEXT UNIQUE,"
                 + COLUMN_PASSWORD + " TEXT"
                 + ")";
@@ -39,10 +41,11 @@ public class DBHelper extends SQLiteOpenHelper {
      * Insert a new user into the users table.
      * @return true if insertion was successful, false otherwise.
      */
-    public boolean addUser(String email, String password) {
+    public boolean addUser(String email, String username, String password) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_EMAIL, email);
+        values.put(COLUMN_USERNAME, username);
         values.put(COLUMN_PASSWORD, password);
         long result = db.insert(TABLE_USERS, null, values);
         db.close();
