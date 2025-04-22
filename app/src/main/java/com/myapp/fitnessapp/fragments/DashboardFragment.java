@@ -15,17 +15,12 @@ import com.myapp.fitnessapp.R;
 
 public class DashboardFragment extends Fragment {
 
-    private CardView cardWorkoutLogging,
-            cardExerciseLibrary,
-            cardWorkoutPlanner,
-            cardProgress;
+    private CardView cardWorkoutLogging, cardExerciseLibrary, cardWorkoutPlanner, cardProgress;
     private View btnTimer;
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         // Inflate the fragment's layout
         return inflater.inflate(R.layout.fragment_dashboard, container, false);
     }

@@ -18,7 +18,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/profile_image"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_baseline_account_circle_24" />
+            android:src="@drawable/profile_icon" />
 
         <EditText
             android:id="@+id/full_name_edit_text"

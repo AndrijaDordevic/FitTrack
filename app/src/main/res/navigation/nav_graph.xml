@@ -1,13 +1,14 @@
-<!-- res/navigation/nav_graph.xml -->
+<?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/welcomeFragment">
 
     <fragment
         android:id="@+id/welcomeFragment"
         android:name="com.myapp.fitnessapp.fragments.WelcomeFragment"
-        android:label="Welcome">
+        tools:label="Welcome">
         <action
             android:id="@+id/action_welcome_to_login"
             app:destination="@id/loginFragment"/>
@@ -19,7 +20,7 @@
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.myapp.fitnessapp.fragments.LoginFragment"
-        android:label="Login">
+        tools:label="Login">
         <action
             android:id="@+id/action_login_to_dashboard"
             app:destination="@id/dashboardFragment"/>
@@ -28,7 +29,7 @@
     <fragment
         android:id="@+id/signUpFragment"
         android:name="com.myapp.fitnessapp.fragments.SignUpFragment"
-        android:label="Sign Up">
+        tools:label="Sign Up">
         <action
             android:id="@+id/action_signup_to_profile"
             app:destination="@id/profileSetupFragment"/>
@@ -37,7 +38,7 @@
     <fragment
         android:id="@+id/profileSetupFragment"
         android:name="com.myapp.fitnessapp.fragments.ProfileSetUpFragment"
-        android:label="Profile Setup">
+        tools:label="Profile Setup">
         <argument
             android:name="email"
             app:argType="string" />
@@ -53,9 +54,8 @@
     <fragment
         android:id="@+id/dashboardFragment"
         android:name="com.myapp.fitnessapp.fragments.DashboardFragment"
-        android:label="Dashboard">
+        tools:label="Dashboard">
 
-        <!-- Navigation from Dashboard to each feature fragment -->
         <action
             android:id="@+id/action_dashboard_to_workoutLogging"
             app:destination="@id/workoutLoggingFragment"/>
@@ -73,30 +73,40 @@
             app:destination="@id/timerFragment"/>
     </fragment>
 
-    <!-- New feature fragments -->
+    <!-- Feature fragments -->
     <fragment
         android:id="@+id/workoutLoggingFragment"
         android:name="com.myapp.fitnessapp.fragments.WorkoutLoggingFragment"
-        android:label="Workout Logging" />
+        tools:label="Workout Logging" />
 
     <fragment
         android:id="@+id/exerciseLibraryFragment"
         android:name="com.myapp.fitnessapp.fragments.ExerciseLibraryFragment"
-        android:label="Exercise Library" />
+        tools:label="Exercise Library" />
 
     <fragment
         android:id="@+id/workoutPlannerFragment"
         android:name="com.myapp.fitnessapp.fragments.WorkoutPlannerFragment"
-        android:label="Workout Planner" />
+        tools:label="Workout Planner" />
 
     <fragment
         android:id="@+id/progressFragment"
         android:name="com.myapp.fitnessapp.fragments.ProgressFragment"
-        android:label="Progress" />
+        tools:label="Progress" />
 
     <fragment
         android:id="@+id/timerFragment"
         android:name="com.myapp.fitnessapp.fragments.TimerFragment"
-        android:label="Timer" />
+        tools:label="Timer" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.myapp.fitnessapp.fragments.ProfileFragment"
+        tools:label="Profile" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.myapp.fitnessapp.fragments.SettingsFragment"
+        tools:label="Settings" />
 
 </navigation>
