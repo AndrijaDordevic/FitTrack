@@ -80,6 +80,7 @@ public class ExerciseLoggingFragment extends Fragment {
         if (exerciseId == -1) {
             btnAddSet.setEnabled(false);
             btnRemoveSet.setEnabled(false);
+            btnSaveWorkout.setEnabled(false);
         }
 
         // 4) Load existing sets; if none, show one blank row

@@ -12,7 +12,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Set 1"
-        android:layout_marginEnd="16dp"/>
+        android:layout_marginEnd="16dp"
+        android:textColor="?attr/colorOnBackground"/>
 
     <!-- Reps input -->
     <EditText
@@ -21,7 +22,8 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:hint="Reps"
-        android:inputType="number"/>
+        android:inputType="number"
+        android:textColor="?attr/colorOnBackground"/>
 
     <!-- Weight input -->
     <EditText
@@ -31,6 +33,7 @@
         android:layout_weight="1"
         android:hint="Weight"
         android:inputType="numberDecimal"
-        android:layout_marginStart="16dp"/>
+        android:layout_marginStart="16dp"
+        android:textColor="?attr/colorOnBackground"/>
 
 </LinearLayout>

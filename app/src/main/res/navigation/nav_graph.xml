@@ -127,16 +127,4 @@
         android:name="com.myapp.fitnessapp.fragments.ExerciseLoggingFragment"
         android:label="Exercise Logging" />
 
-    <fragment
-        android:id="@+id/freestyleLoggingFragment"
-        android:name="com.myapp.fitnessapp.fragments.FreestyleLoggingFragment"
-        tools:layout="@layout/fragment_freestyle_logging">
-        <argument
-            android:name="exerciseId"
-            app:argType="integer" />
-        <argument
-            android:name="userEmail"
-            app:argType="string" />
-    </fragment>
-
 </navigation>
