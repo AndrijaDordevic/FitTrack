@@ -1,5 +1,6 @@
 package com.myapp.fitnessapp.adapters;
 
+import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.myapp.fitnessapp.R;
@@ -19,13 +21,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public class DayExerciseAdapter
-        extends RecyclerView.Adapter<DayExerciseAdapter.ViewHolder> {
+public class DayExerciseAdapter extends RecyclerView.Adapter<DayExerciseAdapter.ViewHolder> {
 
     private final List<ExerciseItem> fullList;
     private final List<ExerciseItem> filteredList;
     private final Set<Integer> selectedIds = new HashSet<>();
     private boolean restOnly = false;
+
 
     // NEW: control whether items are tappable/selectable
     private boolean selectionEnabled = true;
@@ -136,24 +138,20 @@ public class DayExerciseAdapter
         ExerciseItem item = filteredList.get(position);
         boolean isSelected = selectedIds.contains(item.getId());
 
+        // Highlight if selected
         holder.itemView.setActivated(isSelected);
 
-        if (!selectionEnabled) {
-            holder.itemView.setClickable(false);
-            holder.itemView.setFocusable(false);
-            holder.itemView.setForeground(null); // Removes ripple on modern APIs
-        } else {
-            holder.itemView.setClickable(true);
-            holder.itemView.setFocusable(true);
+        // Always allow clicks (we’ll branch in the listener)
+        holder.itemView.setClickable(true);
+        holder.itemView.setFocusable(true);
 
-            // Restore ripple
-            TypedValue outValue = new TypedValue();
-            holder.itemView.getContext().getTheme()
-                    .resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
-            holder.itemView.setForeground(
-                    ContextCompat.getDrawable(holder.itemView.getContext(), outValue.resourceId)
-            );
-        }
+        // Re-apply the ripple foreground so you get touch feedback
+        TypedValue outValue = new TypedValue();
+        holder.itemView.getContext().getTheme()
+                .resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
+        holder.itemView.setForeground(
+                ContextCompat.getDrawable(holder.itemView.getContext(), outValue.resourceId)
+        );
     }
 
 
@@ -163,6 +161,8 @@ public class DayExerciseAdapter
         selectedIds.addAll(ids);
         notifyDataSetChanged();
     }
+
+
 
     class ViewHolder extends RecyclerView.ViewHolder {
         final TextView tvName;
@@ -174,19 +174,28 @@ public class DayExerciseAdapter
             tvCategory = itemView.findViewById(R.id.textExerciseCategory);
 
             itemView.setOnClickListener(v -> {
-                // only handle clicks when selectionEnabled
-                if (!selectionEnabled) return;
-
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
 
                 ExerciseItem clicked = filteredList.get(pos);
-                int id = clicked.getId();
 
-                if (selectedIds.contains(id)) selectedIds.remove(id);
-                else                           selectedIds.add(id);
-
-                notifyItemChanged(pos, "selection");
+                if (!selectionEnabled) {
+                    // NAVIGATION MODE: go to ExerciseLoggingFragment by its destination ID
+                    Bundle bundle = new Bundle();
+                    bundle.putInt("exerciseId", clicked.getId());
+                    Navigation.findNavController(v)
+                            .navigate(R.id.exerciseLoggingFragment, bundle);
+                } else {
+                    // EDIT MODE: toggle selection
+                    int id = clicked.getId();
+                    if (selectedIds.contains(id)) {
+                        selectedIds.remove(id);
+                    } else {
+                        selectedIds.add(id);
+                    }
+                    // Only re-bind that one item
+                    notifyItemChanged(pos, /* payload */ new Object());
+                }
             });
         }
     }

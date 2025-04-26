@@ -1,5 +1,6 @@
 package com.myapp.fitnessapp.fragments;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,13 +10,12 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.preference.PreferenceManager;
 
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.database.DBHelper;
-import android.content.Intent;
 
 public class SignUpFragment extends Fragment {
     private EditText emailEt, userEt, passEt;
@@ -46,6 +46,12 @@ public class SignUpFragment extends Fragment {
         }
 
         if (db.addUser(email, user, pass)) {
+            // Save to SharedPreferences
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            prefs.edit()
+                    .putString("user_email", email)
+                    .apply();
+
             Toast.makeText(getContext(), "Registered!", Toast.LENGTH_SHORT).show();
 
             // pass your data on
@@ -63,4 +69,3 @@ public class SignUpFragment extends Fragment {
         }
     }
 }
-

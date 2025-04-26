@@ -1,5 +1,6 @@
 package com.myapp.fitnessapp.fragments;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.preference.PreferenceManager;
 
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.database.DBHelper;
@@ -24,7 +26,9 @@ public class LoginFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_login, container, false);
 
         dbHelper = new DBHelper(requireContext());
@@ -53,6 +57,12 @@ public class LoginFragment extends Fragment {
 
         boolean exists = dbHelper.checkUser(email, password);
         if (exists) {
+            // Save to SharedPreferences
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            prefs.edit()
+                    .putString("user_email", email)
+                    .apply();
+
             Toast.makeText(requireContext(), "Login successful!", Toast.LENGTH_SHORT).show();
             NavHostFragment.findNavController(this)
                     .navigate(R.id.action_login_to_dashboard);

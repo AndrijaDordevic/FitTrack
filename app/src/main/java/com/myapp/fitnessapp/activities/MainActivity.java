@@ -23,15 +23,19 @@ public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private TextView title;
     private NavController navController;
+    private String currentUserEmail;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        // 🌙 Apply saved dark mode preference before anything else
+        // Apply saved dark mode preference
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean darkMode = prefs.getBoolean("pref_dark_mode", false);
         AppCompatDelegate.setDefaultNightMode(
                 darkMode ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
         );
+
+        // Retrieve signed-in user's email
+        currentUserEmail = prefs.getString("user_email", "");
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -39,12 +43,11 @@ public class MainActivity extends AppCompatActivity {
         // Setup toolbar
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
-        // Toolbar title
+        // Toolbar title view
         title = findViewById(R.id.toolbar_title);
 
         // NavController
@@ -54,8 +57,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Bottom navigation
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
-
-        // Intercept tab selections
         bottomNav.setOnItemSelectedListener(item -> {
             int destId = item.getItemId();
             int currentId = navController.getCurrentDestination().getId();
@@ -63,36 +64,39 @@ public class MainActivity extends AppCompatActivity {
             if (currentId == destId) return true;
 
             navController.popBackStack(R.id.dashboardFragment, false);
-            navController.navigate(destId);
+
+            if (destId == R.id.dayPlannerFragment) {
+                // Pass the current user's email to DayPlannerFragment
+                Bundle args = new Bundle();
+                args.putString("userEmail", currentUserEmail);
+                navController.navigate(destId, args);
+            } else {
+                navController.navigate(destId);
+            }
             return true;
         });
 
-        // Destination change listener for custom UI control
+        // Show/hide UI elements on destination change
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             boolean hide = destination.getId() == R.id.welcomeFragment
                     || destination.getId() == R.id.signUpFragment
                     || destination.getId() == R.id.loginFragment;
 
-            // Hide or show appbar and bottom nav
             findViewById(R.id.appbar).setVisibility(hide ? View.GONE : View.VISIBLE);
             bottomNav.setVisibility(hide ? View.GONE : View.VISIBLE);
             title.setVisibility(hide ? View.GONE : View.VISIBLE);
 
-            // Show/hide back button based on top-level destinations
-            Set<Integer> topLevelDestinations = Set.of(
+            Set<Integer> topLevel = Set.of(
                     R.id.dashboardFragment,
                     R.id.profileFragment,
                     R.id.settingsFragment
             );
-
-            if (!hide && !topLevelDestinations.contains(destination.getId())) {
+            if (!hide && !topLevel.contains(destination.getId())) {
                 toolbar.setNavigationIcon(R.drawable.back_arrow);
                 toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
-
             } else {
                 toolbar.setNavigationIcon(null);
             }
-
         });
     }
 

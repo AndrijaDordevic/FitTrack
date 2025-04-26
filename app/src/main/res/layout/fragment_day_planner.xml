@@ -4,67 +4,92 @@
     android:orientation="vertical"
     android:padding="16dp"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background">
 
-    <!-- 1) If checked, this is a Rest Day -->
-    <CheckBox
-        android:id="@+id/checkRest"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Rest Day"
-        android:textColor="?attr/colorOnBackground"/>
+    <!-- Plan name (summary mode) -->
+<TextView
+android:id="@+id/textPlanName"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:textAppearance="?attr/textAppearanceHeadline6"
+android:paddingBottom="8dp"
+android:visibility="gone"
+android:drawableEnd="@drawable/pencil_icon"
+android:drawablePadding="8dp"
+android:clickable="true"
+android:focusable="true"/>
 
-    <!-- 2) Filter by category -->
-    <Spinner
-        android:id="@+id/spinnerCategoryFilter"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
+    <!-- Rest Day checkbox -->
+<CheckBox
+android:id="@+id/checkRest"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:text="Rest Day"
+android:textColor="?attr/colorOnBackground"/>
 
-    <!-- 3) Search by name -->
-    <androidx.appcompat.widget.SearchView
-        android:id="@+id/searchView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:queryHint="Search exercises"
-        android:layout_marginTop="8dp"/>
+    <!-- Category filter -->
+<Spinner
+android:id="@+id/spinnerCategoryFilter"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:layout_marginTop="8dp"/>
 
-    <!-- 4) Multi-select list of exercises -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerExercises"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"/>
+    <!-- Search -->
+<androidx.appcompat.widget.SearchView
+android:id="@+id/searchView"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:queryHint="Search exercises"
+android:layout_marginTop="8dp"/>
 
-    <!-- 5 & 6) Buttons in one horizontal row -->
+    <!-- Prompt shown in edit mode -->
+<TextView
+android:id="@+id/tvPromptAdd"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:text="Press on workout to add"
+android:textAppearance="?attr/textAppearanceBody2"
+android:textColor="?attr/colorOnBackground"
+android:paddingVertical="8dp"
+android:visibility="gone"/>
+
+    <!-- Exercise list -->
+<androidx.recyclerview.widget.RecyclerView
+android:id="@+id/recyclerExercises"
+android:layout_width="match_parent"
+android:layout_height="0dp"
+android:layout_weight="1"
+android:layout_marginTop="8dp"/>
+
+    <!-- Save & Clear buttons -->
     <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:weightSum="2">
+
+    <Button
+        android:id="@+id/btnSaveDay"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:weightSum="2">
+        android:layout_weight="1"
+        android:text="Save Plan"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"/>
 
-        <Button
-            android:id="@+id/btnSaveDay"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Save Plan"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"/>
+    <View
+        android:layout_width="8dp"
+        android:layout_height="match_parent"/>
 
-        <View
-            android:layout_width="8dp"
-            android:layout_height="match_parent"/>
-
-        <Button
-            android:id="@+id/btnClearPlanner"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Clear"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"/>
+    <Button
+        android:id="@+id/btnClearPlanner"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Clear"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"/>
     </LinearLayout>
 </LinearLayout>

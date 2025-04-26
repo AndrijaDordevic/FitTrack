@@ -19,6 +19,6 @@
 
     <!-- 4) Default -->
     <item
-        android:drawable="@color/colorBackground" />
+        android:drawable="@color/background" />
 
 </selector>

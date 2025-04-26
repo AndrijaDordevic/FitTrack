@@ -113,4 +113,30 @@
         android:name="com.myapp.fitnessapp.fragments.SettingsFragment"
         tools:label="Settings" />
 
+    <fragment
+        android:id="@+id/dayPlannerFragment"
+        android:name="com.myapp.fitnessapp.fragments.DayPlannerFragment"
+        android:label="fragment_day_planner">
+        <action
+            android:id="@+id/action_dayPlannerFragment_to_exerciseLoggingFragment"
+            app:destination="@id/exerciseLoggingFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/exerciseLoggingFragment"
+        android:name="com.myapp.fitnessapp.fragments.ExerciseLoggingFragment"
+        android:label="Exercise Logging" />
+
+    <fragment
+        android:id="@+id/freestyleLoggingFragment"
+        android:name="com.myapp.fitnessapp.fragments.FreestyleLoggingFragment"
+        tools:layout="@layout/fragment_freestyle_logging">
+        <argument
+            android:name="exerciseId"
+            app:argType="integer" />
+        <argument
+            android:name="userEmail"
+            app:argType="string" />
+    </fragment>
+
 </navigation>

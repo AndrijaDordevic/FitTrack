@@ -6,15 +6,19 @@ import android.database.sqlite.SQLiteDatabase;
 import android.content.ContentValues;
 import android.database.Cursor;
 
+import com.myapp.fitnessapp.models.ExerciseItem;
+import com.myapp.fitnessapp.models.WorkoutSet;
 import androidx.annotation.NonNull;
+
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DBHelper extends SQLiteOpenHelper {
-
+    private static final String TAG = "DBHelper";
     private static final String DATABASE_NAME = "FitnessApp.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 14;
 
     // Users table
     private static final String TABLE_USERS       = "users";
@@ -36,6 +40,16 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String TABLE_DAY_PLAN   = "day_plans";
     private static final String COL_DAY_NAME     = "day_name";
     private static final String COL_EX_ID        = "exercise_id";
+    private static final String COL_USER_EMAIL  = "user_email";
+
+    private static final String TABLE_WORKOUT_LOGS = "workout_logs";
+    private static final String COLUMN_LOG_ID = "log_id";
+    private static final String COLUMN_USER_EMAIL = "user_email";
+    private static final String COLUMN_EXERCISE_ID = "exercise_id";
+    private static final String COLUMN_SETS = "sets";
+    private static final String COLUMN_REPS = "reps";
+    private static final String COLUMN_WEIGHT = "weight";
+    private static final String COLUMN_DATE = "date";
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -120,13 +134,41 @@ public class DBHelper extends SQLiteOpenHelper {
         );
 
         db.execSQL(
-                "CREATE TABLE " + TABLE_DAY_PLAN + " (" +
-                        COL_DAY_NAME + " TEXT NOT NULL, " +
-                        COL_EX_ID    + " INTEGER NOT NULL, " +
-                        "PRIMARY KEY(" + COL_DAY_NAME + "," + COL_EX_ID + "), " +
-                        "FOREIGN KEY(" + COL_EX_ID + ") REFERENCES exercises(id) " +
-                        "ON DELETE CASCADE" +
-                        ");"
+                "CREATE TABLE IF NOT EXISTS " + TABLE_DAY_PLAN + " (" +
+                        COL_USER_EMAIL + " TEXT    NOT NULL, " +
+                        COL_DAY_NAME   + " TEXT    NOT NULL, " +
+                        COL_EX_ID      + " INTEGER NOT NULL, " +
+                        "name           TEXT, " +             // ← new
+                        "PRIMARY KEY(" + COL_USER_EMAIL + ","+ COL_DAY_NAME + ","+ COL_EX_ID + "), " +
+                        "FOREIGN KEY(" + COL_EX_ID + ")     REFERENCES exercises(id)    ON DELETE CASCADE, " +
+                        "FOREIGN KEY(" + COL_USER_EMAIL + ") REFERENCES users(email) ON DELETE CASCADE" +
+                        ")"
+        );
+
+        db.execSQL(
+                "CREATE TABLE IF NOT EXISTS " + TABLE_WORKOUT_LOGS + " (" +
+                        COLUMN_LOG_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        COLUMN_USER_EMAIL + " TEXT NOT NULL, " +
+                        COLUMN_EXERCISE_ID + " INTEGER NOT NULL, " +
+                        COLUMN_SETS + " INTEGER, " +
+                        COLUMN_REPS + " INTEGER, " +
+                        COLUMN_WEIGHT + " REAL, " +
+                        COLUMN_DATE + " TEXT, " + // Example: "2025-04-26"
+                        "FOREIGN KEY(" + COLUMN_EXERCISE_ID + ") REFERENCES " + TABLE_EXERCISES + "(" + COLUMN_EX_ID + ")" +
+                        ")"
+        );
+
+        db.execSQL(
+                "CREATE TABLE IF NOT EXISTS workout_sets (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        "exercise_id INTEGER NOT NULL, " +
+                        "user_email TEXT    NOT NULL, " +
+                        "set_number INTEGER NOT NULL, " +
+                        "reps INTEGER, " +
+                        "weight REAL, " +
+                        "FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE, " +
+                        "FOREIGN KEY(user_email)    REFERENCES users(email) ON DELETE CASCADE" +
+                        ")"
         );
     }
 
@@ -134,8 +176,14 @@ public class DBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Drop tables whose schema changed
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_DAY_PLAN);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_EXERCISES);
+        db.execSQL("DROP TABLE IF EXISTS workout_sets");
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_WORKOUT_LOGS);
+
+        // Recreate from scratch
         onCreate(db);
     }
 
@@ -277,21 +325,22 @@ public class DBHelper extends SQLiteOpenHelper {
         return db.rawQuery("SELECT * FROM exercises WHERE category = ?", new String[]{category});
     }
 
-    public void saveDayPlan(String dayName, List<Integer> exerciseIds) {
+    public void saveDayPlan(String userEmail, String dayName, List<Integer> exerciseIds) {
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
         try {
-            // 1) delete any existing entries for this day
+            // delete existing for this user+day
             db.delete(TABLE_DAY_PLAN,
-                    COL_DAY_NAME + " = ?",
-                    new String[]{ dayName });
+                    COL_USER_EMAIL + " = ? AND " + COL_DAY_NAME + " = ?",
+                    new String[]{ userEmail, dayName });
 
-            // 2) insert the new ones
+            // insert new entries
             ContentValues cv = new ContentValues();
             for (Integer exId : exerciseIds) {
                 cv.clear();
-                cv.put(COL_DAY_NAME, dayName);
-                cv.put(COL_EX_ID,    exId);
+                cv.put(COL_USER_EMAIL, userEmail);
+                cv.put(COL_DAY_NAME,   dayName);
+                cv.put(COL_EX_ID,      exId);
                 db.insert(TABLE_DAY_PLAN, null, cv);
             }
 
@@ -303,22 +352,27 @@ public class DBHelper extends SQLiteOpenHelper {
 
     /** Load the saved plan (list of exercise IDs) for a given dayName */
     @NonNull
-    public List<Integer> getDayPlan(String dayName) {
+    public List<Integer> getDayPlan(String userEmail, String dayName) {
         List<Integer> result = new ArrayList<>();
+        // 1) refuse to bind null into the SQL
+        if (userEmail == null || dayName == null) {
+            Log.w(TAG, "getDayPlan called with null: userEmail="
+                    + userEmail + " dayName=" + dayName);
+            return result;  // empty plan rather than crash
+        }
+
         SQLiteDatabase db = getReadableDatabase();
         Cursor c = db.query(
                 TABLE_DAY_PLAN,
                 new String[]{ COL_EX_ID },
-                COL_DAY_NAME + " = ?",
-                new String[]{ dayName },
+                COL_USER_EMAIL + " = ? AND " + COL_DAY_NAME + " = ?",
+                new String[]{ userEmail, dayName },
                 null, null, null
         );
-        if (c != null) {
-            while (c.moveToNext()) {
-                result.add(c.getInt(c.getColumnIndexOrThrow(COL_EX_ID)));
-            }
-            c.close();
+        while (c != null && c.moveToNext()) {
+            result.add(c.getInt(c.getColumnIndexOrThrow(COL_EX_ID)));
         }
+        if (c != null) c.close();
         return result;
     }
 
@@ -329,5 +383,159 @@ public class DBHelper extends SQLiteOpenHelper {
         if (c != null) c.close();
         return has;
     }
+
+    public void savePlanName(String userEmail, String dayName, String planName) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("name", planName);
+        db.update(TABLE_DAY_PLAN,
+                cv,
+                COL_USER_EMAIL + " = ? AND " + COL_DAY_NAME + " = ?",
+                new String[]{ userEmail, dayName });
+    }
+
+    public String getPlanName(String userEmail, String dayName) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(
+                TABLE_DAY_PLAN,
+                new String[]{ "name" },
+                COL_USER_EMAIL + " = ? AND " + COL_DAY_NAME + " = ?",
+                new String[]{ userEmail, dayName },
+                null, null,
+                "1"
+        );
+        String name = "";
+        if (c != null && c.moveToFirst()) {
+            name = c.getString(c.getColumnIndexOrThrow("name"));
+            c.close();
+        }
+        return name;
+    }
+
+    public boolean addWorkoutLog(String userEmail, int exerciseId, int sets, int reps, float weight, String date) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_USER_EMAIL, userEmail);
+        values.put(COLUMN_EXERCISE_ID, exerciseId);
+        values.put(COLUMN_SETS, sets);
+        values.put(COLUMN_REPS, reps);
+        values.put(COLUMN_WEIGHT, weight);
+        values.put(COLUMN_DATE, date);
+        long result = db.insert(TABLE_WORKOUT_LOGS, null, values);
+        db.close();
+        return result != -1;
+    }
+
+    public long insertWorkoutSet(int exerciseId, int setNumber, int reps, float weight, String userEmail) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("exercise_id", exerciseId);
+        cv.put("user_email",   userEmail);
+        cv.put("set_number",  setNumber);
+        cv.put("reps",        reps);
+        cv.put("weight",      weight);
+        long result = db.insertWithOnConflict(
+                "workout_sets",
+                null,
+                cv,
+                SQLiteDatabase.CONFLICT_REPLACE
+        );
+        db.close();
+        return result;
+    }
+
+    public List<WorkoutSet> getWorkoutSetsForExercise(int exerciseId, String userEmail) {
+        List<WorkoutSet> out = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(
+                "workout_sets",
+                new String[]{"id","exercise_id","user_email","set_number","reps","weight"},
+                "exercise_id = ? AND user_email = ?",
+                new String[]{String.valueOf(exerciseId), userEmail},
+                null, null,
+                "set_number ASC"
+        );
+        if (c != null) {
+            while (c.moveToNext()) {
+                out.add(new WorkoutSet(
+                        c.getInt(c.getColumnIndexOrThrow("id")),
+                        c.getInt(c.getColumnIndexOrThrow("exercise_id")),
+                        c.getString(c.getColumnIndexOrThrow("user_email")),
+                        c.getInt(c.getColumnIndexOrThrow("set_number")),
+                        c.getInt(c.getColumnIndexOrThrow("reps")),
+                        c.getFloat(c.getColumnIndexOrThrow("weight"))
+                ));
+            }
+            c.close();
+        }
+        return out;
+    }
+
+    /** Checks if a specific set exists */
+    public boolean hasWorkoutSet(int exerciseId, int setNumber, String userEmail) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(
+                "workout_sets",
+                new String[]{"id"},
+                "exercise_id = ? AND set_number = ? AND user_email = ?",
+                new String[]{String.valueOf(exerciseId), String.valueOf(setNumber), userEmail},
+                null, null, null
+        );
+        boolean exists = (c != null && c.moveToFirst());
+        if (c != null) c.close();
+        return exists;
+    }
+
+    /** Updates an existing set */
+    public int updateWorkoutSet(int exerciseId, int setNumber, int reps, float weight, String userEmail) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("reps",   reps);
+        cv.put("weight", weight);
+        int rows = db.update(
+                "workout_sets",
+                cv,
+                "exercise_id = ? AND set_number = ? AND user_email = ?",
+                new String[]{String.valueOf(exerciseId), String.valueOf(setNumber), userEmail}
+        );
+        db.close();
+        return rows;
+    }
+
+    public int deleteWorkoutSet(int exerciseId, int setNumber, String userEmail) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int rows = db.delete(
+                "workout_sets",
+                "exercise_id = ? AND set_number = ? AND user_email = ?",
+                new String[]{
+                        String.valueOf(exerciseId),
+                        String.valueOf(setNumber),
+                        userEmail
+                }
+        );
+        db.close();
+        return rows;
+    }
+
+    public List<ExerciseItem> getAllExerciseItems() {
+        List<ExerciseItem> list = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(
+                TABLE_EXERCISES,
+                new String[]{ COLUMN_EX_ID, COLUMN_EX_NAME, COLUMN_EX_CATEGORY },
+                null, null, null, null,
+                COLUMN_EX_NAME + " ASC"
+        );
+        while (c.moveToNext()) {
+            list.add(new ExerciseItem(
+                    c.getInt(c.getColumnIndexOrThrow(COLUMN_EX_ID)),
+                    c.getString(c.getColumnIndexOrThrow(COLUMN_EX_NAME)),
+                    c.getString(c.getColumnIndexOrThrow(COLUMN_EX_CATEGORY))
+            ));
+        }
+        c.close();
+        return list;
+    }
+
 }
 
