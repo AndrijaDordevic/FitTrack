@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 1) Pressed _and_ already activated (selected) -->
+    <item
+        android:state_pressed="true"
+        android:state_activated="true"
+        android:drawable="@color/secondary" />
+
+    <!-- 2) Pressed but not activated -->
+    <item
+        android:state_pressed="true"
+        android:drawable="@color/secondary" />
+
+    <!-- 3) Activated (selected) after release -->
+    <item
+        android:state_activated="true"
+        android:drawable="@color/secondary" />
+
+    <!-- 4) Default -->
+    <item
+        android:drawable="@color/colorBackground" />
+
+</selector>

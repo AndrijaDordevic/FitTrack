@@ -1,18 +1,45 @@
 package com.myapp.fitnessapp.fragments;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import androidx.annotation.NonNull;
+
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.SwitchPreferenceCompat;
+import androidx.preference.PreferenceManager;
+
 import com.myapp.fitnessapp.R;
 
-public class SettingsFragment extends Fragment {
-    @Nullable
+public class SettingsFragment extends PreferenceFragmentCompat {
+    private static final String KEY_DARK_MODE = "pref_dark_mode";
+
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_settings, container, false);
+    public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
+        setPreferencesFromResource(R.xml.fragment_settings, rootKey);
+
+        Preference togglePref = findPreference("pref_dark_mode_toggle");
+        if (togglePref != null) {
+            togglePref.setOnPreferenceClickListener(preference -> {
+                SharedPreferences prefs = PreferenceManager
+                        .getDefaultSharedPreferences(requireContext());
+                boolean isDarkMode = prefs.getBoolean(KEY_DARK_MODE, false);
+                boolean newMode = !isDarkMode;
+
+                prefs.edit()
+                        .putBoolean(KEY_DARK_MODE, newMode)
+                        .commit();
+
+                AppCompatDelegate.setDefaultNightMode(
+                        newMode ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
+                );
+
+                requireActivity().recreate();
+
+                return true;
+            });
+        }
     }
+
 }

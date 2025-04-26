@@ -1,13 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/timer_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
     android:gravity="center">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Timer"
-        android:textSize="24sp"
-        android:textStyle="bold" />
-</FrameLayout>
+<TextView
+android:id="@+id/text_countdown"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:text="00:00"
+android:textSize="48sp"
+android:clickable="true"
+android:focusable="true"
+android:layout_marginBottom="24dp"
+android:textColor="?attr/colorOnBackground" />
+
+<LinearLayout
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:orientation="horizontal">
+
+<com.google.android.material.button.MaterialButton
+    style="?attr/materialButtonStyle"
+    android:id="@+id/btn_start"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Start" />
+
+<com.google.android.material.button.MaterialButton
+    style="?attr/materialButtonStyle"
+    android:id="@+id/btn_pause"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Pause"
+    android:layout_marginStart="16dp"
+    android:enabled="false" />
+
+<com.google.android.material.button.MaterialButton
+    style="?attr/materialButtonStyle"
+    android:id="@+id/btn_reset"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Reset"
+    android:layout_marginStart="16dp"
+    android:enabled="false" />
+
+</LinearLayout>
+
+    </LinearLayout>

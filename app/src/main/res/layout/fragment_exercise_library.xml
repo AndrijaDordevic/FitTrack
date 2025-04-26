@@ -1,13 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center">
+    android:padding="16dp">
 
+    <Spinner
+        android:id="@+id/spinnerFilter"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:prompt="@string/filter_prompt"
+        android:contentDescription="@string/filter_spinner_desc" />
+
+    <!-- Bonus tip instruction -->
     <TextView
+        android:id="@+id/textBonusTipMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Exercise Library"
-        android:textSize="24sp"
-        android:textStyle="bold"/>
-</FrameLayout>
+        android:text="Press on exercise for a bonus tip"
+        android:textSize="20sp"
+        android:textColor="?attr/colorOnBackground"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewExercises"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:contentDescription="@string/exercises_list_desc" />
+</LinearLayout>

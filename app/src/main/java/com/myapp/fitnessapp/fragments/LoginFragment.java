@@ -36,7 +36,7 @@ public class LoginFragment extends Fragment {
         loginButton.setOnClickListener(v -> loginUser());
         signUpButton.setOnClickListener(v ->
                 NavHostFragment.findNavController(this)
-                        .navigate(R.id.action_login_to_dashboard)
+                        .navigate(R.id.action_login_to_signUp)
         );
 
         return view;

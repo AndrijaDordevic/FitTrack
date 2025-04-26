@@ -1,0 +1,5 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <dimen name="mtrl_switch_track_width" tools:override="true">40dp</dimen>
+    <dimen name="mtrl_switch_track_height" tools:override="true">24dp</dimen>
+    <dimen name="mtrl_switch_thumb_size" tools:override="true">20dp</dimen>
+</resources>

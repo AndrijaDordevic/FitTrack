@@ -24,6 +24,10 @@
         <action
             android:id="@+id/action_login_to_dashboard"
             app:destination="@id/dashboardFragment"/>
+        <action
+            android:id="@+id/action_login_to_signUp"
+            app:destination="@id/signUpFragment"/>
+
     </fragment>
 
     <fragment

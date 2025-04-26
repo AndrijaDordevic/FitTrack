@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        android:key="pref_dark_mode_toggle"
+        android:title="Toggle Dark Mode"
+        android:summary="Tap to switch between light and dark mode"
+        android:icon="@drawable/theme_icon"
+        android:iconSpaceReserved="true" />
+
+</PreferenceScreen>

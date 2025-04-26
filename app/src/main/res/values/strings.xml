@@ -1,4 +1,9 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">FitTrack</string>
     <string name="profile_image">Profile image</string>
+
+    <string name="filter_prompt">Select muscle group</string>
+    <string name="filter_spinner_desc">Filter exercises by muscle group</string>
+    <string name="exercises_list_desc">List of all exercises</string>
+
 </resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- A custom widget style for MaterialButton -->
+    <style name="Widget.MyApplication.Button" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/button_selector</item>
+        <item name="android:textColor">@color/onSecondary</item>
+    </style>
+</resources>

@@ -4,18 +4,12 @@
     android:id="@+id/scroll_dashboard"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA"
+    android:background="@color/background"
     android:padding="16dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-
-        <!-- Dashboard Title -->
-
-        <!-- Subtitle Text -->
-
-        <!-- Workout Logging Card -->
 
         <TextView
             android:id="@+id/tvSubtitle"
@@ -27,9 +21,9 @@
             android:layout_centerHorizontal="true"
             android:paddingBottom="16dp"
             android:text="DASHBOARD"
-            android:textStyle= "bold"
-            android:textColor="#000000"
-        android:textSize="18sp" />
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnBackground"
+            android:textSize="18sp" />
 
         <androidx.cardview.widget.CardView
             android:id="@+id/cardWorkoutLogging"
@@ -73,14 +67,14 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:gravity="start"
-                        android:textColor="#000000"/>
+                        android:textColor="?attr/colorOnBackground"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Log your sets, reps, and weight"
                         android:textSize="14sp"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnBackground"
                     android:gravity="start" />
                 </LinearLayout>
             </RelativeLayout>
@@ -129,14 +123,14 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:gravity="start"
-                        android:textColor="#000000"/>
+                        android:textColor="?attr/colorOnBackground"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Browse exercises by category"
                         android:textSize="14sp"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnBackground"
                     android:gravity="start" />
                 </LinearLayout>
             </RelativeLayout>
@@ -185,14 +179,14 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:gravity="start"
-                        android:textColor="#000000"/>
+                        android:textColor="?attr/colorOnBackground"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Create your weekly workouts"
                         android:textSize="14sp"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnBackground"
                     android:gravity="start" />
                 </LinearLayout>
             </RelativeLayout>
@@ -241,14 +235,14 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:gravity="start"
-                        android:textColor="#000000"/>
+                        android:textColor="?attr/colorOnBackground"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="View your charts and stats"
                         android:textSize="14sp"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnBackground"
                     android:gravity="start" />
                 </LinearLayout>
             </RelativeLayout>
@@ -276,7 +270,7 @@
             android:layout_marginTop="8dp"
             android:text="Timer"
             android:textSize="24sp"
-            android:textColor="#000000"
+            android:textColor="?attr/colorOnBackground"
             android:textStyle="bold" />
 
     </RelativeLayout>
