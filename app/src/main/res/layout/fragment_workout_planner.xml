@@ -6,6 +6,26 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
+    <!-- Week selector -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        app:layout_anchor="@id/tabLayoutDays"
+        app:layout_anchorGravity="top">
+
+        <TextView
+            android:id="@+id/tvWeekSelector"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Week of: YYYY-MM-DD"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"/>
+
+    </LinearLayout>
+
     <!-- AppBar with the day-of-week tabs -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -17,6 +37,7 @@
             android:layout_height="wrap_content"
             app:tabMode="scrollable"
             app:tabGravity="fill"/>
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- The ViewPager2 that hosts each DayPlannerFragment -->

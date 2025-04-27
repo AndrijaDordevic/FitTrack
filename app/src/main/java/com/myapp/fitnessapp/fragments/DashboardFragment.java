@@ -15,7 +15,7 @@ import com.myapp.fitnessapp.R;
 
 public class DashboardFragment extends Fragment {
 
-    private CardView cardWorkoutLogging, cardExerciseLibrary, cardWorkoutPlanner, cardProgress;
+    private CardView cardNutritionTracker, cardExerciseLibrary, cardWorkoutPlanner, cardProgress;
     private View btnTimer;
 
     @Nullable
@@ -29,20 +29,15 @@ public class DashboardFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize NavController
         NavController navController = NavHostFragment.findNavController(this);
 
-        // Find views in the fragment's layout
-        cardWorkoutLogging    = view.findViewById(R.id.cardWorkoutLogging);
-        cardExerciseLibrary   = view.findViewById(R.id.cardExerciseLibrary);
-        cardWorkoutPlanner    = view.findViewById(R.id.cardWorkoutPlanner);
-        cardProgress          = view.findViewById(R.id.cardProgress);
-        btnTimer              = view.findViewById(R.id.btnTimer);
 
-        // Wire up click listeners to navigate via the Navigation component
-        cardWorkoutLogging.setOnClickListener(v ->
-                navController.navigate(R.id.action_dashboard_to_workoutLogging)
-        );
+        cardExerciseLibrary  = view.findViewById(R.id.cardExerciseLibrary);
+        cardWorkoutPlanner   = view.findViewById(R.id.cardWorkoutPlanner);
+        cardProgress         = view.findViewById(R.id.cardProgress);
+        cardNutritionTracker = view.findViewById(R.id.cardNutritionTracker);
+        btnTimer             = view.findViewById(R.id.btnTimer);
+
         cardExerciseLibrary.setOnClickListener(v ->
                 navController.navigate(R.id.action_dashboard_to_exerciseLibrary)
         );
@@ -52,8 +47,12 @@ public class DashboardFragment extends Fragment {
         cardProgress.setOnClickListener(v ->
                 navController.navigate(R.id.action_dashboard_to_progress)
         );
+        cardNutritionTracker.setOnClickListener(v ->
+                navController.navigate(R.id.action_dashboard_to_nutritionTracker)
+        );
         btnTimer.setOnClickListener(v ->
                 navController.navigate(R.id.action_dashboard_to_timer)
         );
+
     }
 }

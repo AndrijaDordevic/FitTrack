@@ -61,9 +61,6 @@
         tools:label="Dashboard">
 
         <action
-            android:id="@+id/action_dashboard_to_workoutLogging"
-            app:destination="@id/workoutLoggingFragment"/>
-        <action
             android:id="@+id/action_dashboard_to_exerciseLibrary"
             app:destination="@id/exerciseLibraryFragment"/>
         <action
@@ -75,13 +72,12 @@
         <action
             android:id="@+id/action_dashboard_to_timer"
             app:destination="@id/timerFragment"/>
+        <action
+            android:id="@+id/action_dashboard_to_nutritionTracker"
+            app:destination="@id/nutritionTrackerFragment"/>
     </fragment>
 
     <!-- Feature fragments -->
-    <fragment
-        android:id="@+id/workoutLoggingFragment"
-        android:name="com.myapp.fitnessapp.fragments.WorkoutLoggingFragment"
-        tools:label="Workout Logging" />
 
     <fragment
         android:id="@+id/exerciseLibraryFragment"
@@ -126,5 +122,14 @@
         android:id="@+id/exerciseLoggingFragment"
         android:name="com.myapp.fitnessapp.fragments.ExerciseLoggingFragment"
         android:label="Exercise Logging" />
+
+    <fragment
+        android:id="@+id/nutritionTrackerFragment"
+        android:name="com.myapp.fitnessapp.fragments.NutritionTrackerFragment"
+        tools:label="Nutrition Tracker">
+        <action
+            android:id="@+id/action_nutritionTracker_to_dashboard"
+            app:destination="@id/dashboardFragment"/>
+    </fragment>
 
 </navigation>

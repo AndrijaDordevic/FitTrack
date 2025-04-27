@@ -25,60 +25,7 @@
             android:textColor="?attr/colorOnBackground"
             android:textSize="18sp" />
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cardWorkoutLogging"
-            android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_below="@id/tvSubtitle"
-            android:layout_marginBottom="12dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="12dp">
-
-                <!-- Image -->
-                <ImageView
-                    android:id="@+id/imgWorkoutLogging"
-                    android:layout_width="45dp"
-                    android:layout_height="52dp"
-                    android:layout_alignParentLeft="true"
-                    android:layout_centerVertical="true"
-                    android:src="@drawable/workout_board" />
-
-                <!-- Text Layout -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_toEndOf="@id/imgWorkoutLogging"
-                    android:layout_marginStart="24dp"
-                    android:layout_centerVertical="true"
-                    android:gravity="start">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="WORKOUT LOGGING"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:gravity="start"
-                        android:textColor="?attr/colorOnBackground"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Log your sets, reps, and weight"
-                        android:textSize="14sp"
-                        android:textColor="?attr/colorOnBackground"
-                    android:gravity="start" />
-                </LinearLayout>
-            </RelativeLayout>
-        </androidx.cardview.widget.CardView>
 
         <!-- Exercise Library Card -->
         <androidx.cardview.widget.CardView
@@ -87,7 +34,6 @@
             android:layout_height="72dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_below="@id/cardWorkoutLogging"
             android:layout_marginBottom="12dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp">
@@ -247,6 +193,59 @@
                 </LinearLayout>
             </RelativeLayout>
         </androidx.cardview.widget.CardView>
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardNutritionTracker"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_below="@id/cardProgress"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="12dp">
+
+                <ImageView
+                    android:id="@+id/imgNutritionTracker"
+                    android:layout_width="45dp"
+                    android:layout_height="52dp"
+                    android:src="@drawable/nutrition"
+                    android:layout_alignParentLeft="true"
+
+                    android:layout_centerVertical="true" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toEndOf="@id/imgNutritionTracker"
+                    android:layout_marginStart="24dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="start">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="NUTRITION TRACKER"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:gravity="start"
+                        android:textColor="?attr/colorOnBackground"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Log your meals and macros"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnBackground"
+                        android:gravity="start" />
+                </LinearLayout>
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
 
         <!-- Timer Button -->
         <ImageButton
@@ -255,7 +254,7 @@
             android:layout_height="186dp"
             android:layout_below="@id/cardProgress"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="19dp"
+            android:layout_marginTop="130dp"
             android:background="@null"
             android:contentDescription="Timer Button"
             android:scaleType="fitCenter"

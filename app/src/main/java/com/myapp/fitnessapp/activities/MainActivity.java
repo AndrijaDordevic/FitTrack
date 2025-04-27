@@ -1,5 +1,6 @@
 package com.myapp.fitnessapp.activities;
 
+
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -38,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
         currentUserEmail = prefs.getString("user_email", "");
 
         super.onCreate(savedInstanceState);
+
+
         setContentView(R.layout.activity_main);
 
         // Setup toolbar

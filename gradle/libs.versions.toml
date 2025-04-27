@@ -2,6 +2,7 @@
 agp = "8.9.1"
 appcompatVersion = "1.6.1"
 cardview = "1.0.0"
+desugar_jdk_libs = "2.1.5"
 firebaseBom = "33.12.0."
 firebaseBomVersion = "33.12.0"
 googleMaterial = "1.8.0"
@@ -17,10 +18,12 @@ preference = "1.2.1"
 profileinstaller = "1.4.1"
 navigationFragment = "2.8.9"
 navigationUi = "2.8.9"
+threetenabp = "1.4.5"
 
 [libraries]
 appcompat-v161 = { module = "androidx.appcompat:appcompat", version.ref = "appcompatVersion" }
 cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
+desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
@@ -41,6 +44,7 @@ preference = { module = "androidx.preference:preference", version.ref = "prefere
 profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
+threetenabp = { module = "com.jakewharton.threetenabp:threetenabp", version.ref = "threetenabp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

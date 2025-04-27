@@ -11,11 +11,21 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.widget.TextView;
+import java.time.DayOfWeek;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
+
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.myapp.fitnessapp.R;
 
 public class WorkoutPlannerFragment extends Fragment {
+    private TextView tvWeekSelector;
+    private ViewPager2 viewPager;
+    private FragmentStateAdapter pagerAdapter;
+    private TabLayout tabLayout;
     private static final String[] DAYS = {
             "Monday", "Tuesday", "Wednesday",
             "Thursday", "Friday", "Saturday", "Sunday"
@@ -36,19 +46,8 @@ public class WorkoutPlannerFragment extends Fragment {
         );
     }
 
-    @Override
-    public void onViewCreated(
-            @NonNull View view,
-            @Nullable Bundle savedInstanceState
-    ) {
-        super.onViewCreated(view, savedInstanceState);
-
-        // 1. Find the TabLayout and ViewPager2
-        TabLayout tabLayout = view.findViewById(R.id.tabLayoutDays);
-        ViewPager2 viewPager = view.findViewById(R.id.viewPagerDays);
-
-        // 2. Create a FragmentStateAdapter that supplies one DayPlannerFragment per day
-        FragmentStateAdapter pagerAdapter = new FragmentStateAdapter(this) {
+    private void setupViewPager() {
+        pagerAdapter = new FragmentStateAdapter(this) {
             @Override
             public int getItemCount() {
                 return DAYS.length;
@@ -57,20 +56,29 @@ public class WorkoutPlannerFragment extends Fragment {
             @NonNull
             @Override
             public Fragment createFragment(int position) {
-                DayPlannerFragment fragment = new DayPlannerFragment();
-                Bundle args = new Bundle();
-                args.putString("dayName", DAYS[position]);
-                fragment.setArguments(args);
-                return fragment;
+                String dayName = DAYS[position];
+                return DayPlannerFragment.newInstance(dayName, "user@example.com");
             }
         };
         viewPager.setAdapter(pagerAdapter);
 
-        // 3. Link the TabLayout and ViewPager2 so tabs show the day names
-        new TabLayoutMediator(
-                tabLayout,
-                viewPager,
+        new TabLayoutMediator(tabLayout, viewPager,
                 (tab, position) -> tab.setText(DAYS[position])
         ).attach();
+    }
+
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        // Find views
+        tvWeekSelector = view.findViewById(R.id.tvWeekSelector);
+        tabLayout = view.findViewById(R.id.tabLayoutDays);
+        viewPager = view.findViewById(R.id.viewPagerDays);
+
+
+        // Set up ViewPager
+        setupViewPager();
     }
 }

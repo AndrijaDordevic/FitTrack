@@ -50,6 +50,7 @@ public class DayPlannerFragment extends Fragment {
     private boolean isInEditMode;
 
     private TextView tvPlanName;
+    private TextView tvInstructions;
     private TextView tvPromptAdd;
     private Spinner spCategory;
     private CheckBox cbRest;
@@ -62,6 +63,7 @@ public class DayPlannerFragment extends Fragment {
         Bundle args = new Bundle();
         args.putString("dayName", dayName);
         args.putString("userEmail", userEmail);
+
         frag.setArguments(args);
         return frag;
     }
@@ -101,8 +103,10 @@ public class DayPlannerFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+
         // Bind UI
         tvPlanName  = view.findViewById(R.id.textPlanName);
+        tvInstructions = view.findViewById(R.id.tvInstructions);
         tvPromptAdd = view.findViewById(R.id.tvPromptAdd);
         spCategory  = view.findViewById(R.id.spinnerCategoryFilter);
         cbRest      = view.findViewById(R.id.checkRest);
@@ -110,6 +114,7 @@ public class DayPlannerFragment extends Fragment {
         rv          = view.findViewById(R.id.recyclerExercises);
         btnSave     = view.findViewById(R.id.btnSaveDay);
         btnClear    = view.findViewById(R.id.btnClearPlanner);
+
 
         // Rename on plan title click
         tvPlanName.setOnClickListener(v -> {
@@ -179,12 +184,44 @@ public class DayPlannerFragment extends Fragment {
             if (isInEditMode) {
                 List<Integer> sel = fullAdapter.getSelectedIds();
                 if (cbRest.isChecked()) sel = Collections.singletonList(-1);
+
+                // Save the day plan
                 db.saveDayPlan(userEmail, dayName, sel);
+
+                // Save workout_sets + workout_logs for each selected exercise
+                for (int exerciseId : sel) {
+                    ExerciseItem exercise = findExerciseById(exerciseId);
+                    if (exercise == null) continue;
+
+                    int sets = exercise.getSets();
+                    int reps = exercise.getReps();
+                    float w  = exercise.getWeight();
+
+                    // 1) Only log if the user actually entered non‐zero values:
+                    if (sets <= 0 || reps <= 0 || w <= 0f) {
+                        // skip logging entirely
+                        continue;
+                    }
+
+                    // 2) Persist each set into workout_sets
+                    for (int sn = 1; sn <= sets; sn++) {
+                        if (db.hasWorkoutSet(exerciseId, sn, userEmail)) {
+                            db.updateWorkoutSet(exerciseId, sn, reps, w, userEmail, dayName);
+                        } else {
+                            db.insertWorkoutSet(exerciseId, sn, reps, w, userEmail, dayName);
+                        }
+                    }
+
+                    // 3) Now snapshot only fully‐populated workouts into workout_logs
+                    db.saveLogEntry(userEmail, exerciseId, dayName, sets, reps, w);
+                }
+
                 promptNameAndSwitch(sel);
             } else {
                 enterEditMode(db.getDayPlan(userEmail, dayName));
             }
         });
+
 
         // Clear button
         btnClear.setOnClickListener(v -> {
@@ -229,6 +266,7 @@ public class DayPlannerFragment extends Fragment {
         isInEditMode = true;
         btnSave.setText("Save");
         tvPlanName.setVisibility(View.GONE);
+        tvInstructions.setVisibility(View.GONE);
         tvPromptAdd.setVisibility(View.VISIBLE);
         spCategory.setVisibility(View.VISIBLE);
         sv.setVisibility(View.VISIBLE);
@@ -251,6 +289,7 @@ public class DayPlannerFragment extends Fragment {
             tvPlanName.setText(planName);
         }
         tvPlanName.setVisibility(View.VISIBLE);
+        tvInstructions.setVisibility(View.VISIBLE);
         tvPlanName.setOnClickListener(v -> promptNameAndSwitch(ids));
 
         spCategory.setVisibility(View.GONE);
@@ -299,6 +338,15 @@ public class DayPlannerFragment extends Fragment {
 
         builder.setNegativeButton("Skip", (dialog, which) -> enterSummaryMode(selection));
         builder.show();
+    }
+
+    private ExerciseItem findExerciseById(int id) {
+        for (ExerciseItem item : allExercises) { // or wherever you have the full list
+            if (item.getId() == id) {
+                return item;
+            }
+        }
+        return null;
     }
 
     @Override

@@ -8,17 +8,28 @@
     android:background="@color/background">
 
     <!-- Plan name (summary mode) -->
-<TextView
-android:id="@+id/textPlanName"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:textAppearance="?attr/textAppearanceHeadline6"
-android:paddingBottom="8dp"
-android:visibility="gone"
-android:drawableEnd="@drawable/pencil_icon"
-android:drawablePadding="8dp"
-android:clickable="true"
-android:focusable="true"/>
+    <TextView
+    android:id="@+id/textPlanName"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textAppearance="?attr/textAppearanceHeadline6"
+    android:paddingBottom="8dp"
+    android:visibility="gone"
+    android:drawableEnd="@drawable/pencil_icon"
+    android:drawablePadding="8dp"
+    android:clickable="true"
+    android:focusable="true"/>
+
+    <TextView
+        android:id="@+id/tvInstructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tip: Press on exercise to record progress"
+        android:textAppearance="?attr/textAppearanceBody2"
+        android:textColor="?attr/colorOnBackground"
+        android:textSize="16dp"
+        android:paddingVertical="8dp"
+        android:layout_marginTop="8dp"/>
 
     <!-- Rest Day checkbox -->
 <CheckBox
@@ -27,6 +38,7 @@ android:layout_width="wrap_content"
 android:layout_height="wrap_content"
 android:text="Rest Day"
 android:textColor="?attr/colorOnBackground"/>
+
 
     <!-- Category filter -->
 <Spinner
