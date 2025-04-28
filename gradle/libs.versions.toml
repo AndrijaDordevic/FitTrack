@@ -3,9 +3,13 @@ agp = "8.9.1"
 appcompatVersion = "1.6.1"
 cardview = "1.0.0"
 desugar_jdk_libs = "2.1.5"
+firebaseAuth = "23.2.0"
 firebaseBom = "33.12.0."
 firebaseBomVersion = "33.12.0"
 googleMaterial = "1.8.0"
+googleServices = "4.4.2"
+googleServicesVersion = "4.3.15"
+gradle = "8.9.2"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
@@ -14,6 +18,7 @@ material = "1.12.0"
 activity = "1.10.1"
 constraintlayout = "2.2.1"
 materialVersion = "<latest_version>"
+playServicesAuth = "21.3.0"
 preference = "1.2.1"
 profileinstaller = "1.4.1"
 navigationFragment = "2.8.9"
@@ -31,6 +36,10 @@ firebase-bom-v33120 = { module = "com.google.firebase:firebase-bom", version.ref
 firebase-database = { module = "com.google.firebase:firebase-database" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 google-firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+google-firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
+google-services = { module = "com.google.gms:google-services", version.ref = "googleServices" }
+google-services-v4315 = { module = "com.google.gms:google-services", version.ref = "googleServicesVersion" }
+gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -40,6 +49,7 @@ activity = { group = "androidx.activity", name = "activity", version.ref = "acti
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 material-v180 = { module = "com.google.android.material:material", version.ref = "googleMaterial" }
 material-vlatestversion = { module = "com.google.android.material:material", version.ref = "materialVersion" }
+playServicesAuth   = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 preference = { module = "androidx.preference:preference", version.ref = "preference" }
 profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }

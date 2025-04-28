@@ -77,6 +77,7 @@ public class ProgressFragment extends Fragment {
             TypedValue tv = new TypedValue();
             requireContext().getTheme()
                     .resolveAttribute(com.google.android.material.R.attr.colorOnBackground, tv, true);
+
             int textColor = tv.data;
             header.setTextColor(textColor);
             categoryContainer.addView(header);

@@ -1,9 +1,15 @@
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
     <string name="app_name">FitTrack</string>
     <string name="profile_image">Profile image</string>
 
     <string name="filter_prompt">Select muscle group</string>
     <string name="filter_spinner_desc">Filter exercises by muscle group</string>
     <string name="exercises_list_desc">List of all exercises</string>
+
+    <string name="default_web_client_id">490367743449-todb9k7kq04jle0dkolr22jc694q25a5.apps.googleusercontent.com</string>
+
+    <string name="have_account_text">
+    Already have an account? <b><u>Log in</u></b>
+    </string>
 
 </resources>
