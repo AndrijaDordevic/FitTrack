@@ -36,11 +36,74 @@
             android:inputType="number"
             android:layout_marginBottom="24dp"/>
 
+        <!-- HEIGHT -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Height"
+            android:textSize="16sp"
+            android:layout_marginTop="24dp"/>
+        <RadioGroup
+            android:id="@+id/heightUnitGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <RadioButton
+                android:id="@+id/heightMetric"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="cm"
+                android:checked="true"/>
+            <RadioButton
+                android:id="@+id/heightImperial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ft/in"/>
+        </RadioGroup>
+        <EditText
+            android:id="@+id/heightEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="cm"
+            android:inputType="numberDecimal"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- WEIGHT -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Weight"
+            android:textSize="16sp"/>
+        <RadioGroup
+            android:id="@+id/weightUnitGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <RadioButton
+                android:id="@+id/weightMetric"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="kg"
+                android:checked="true"/>
+            <RadioButton
+                android:id="@+id/weightImperial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="lb"/>
+        </RadioGroup>
+        <EditText
+            android:id="@+id/weightEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="kg"
+            android:inputType="numberDecimal"
+            android:layout_marginBottom="24dp"/>
+
         <Button
             android:id="@+id/save_profile_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save Profile" />
+            android:text="Save Profile"/>
 
     </LinearLayout>
 </ScrollView>

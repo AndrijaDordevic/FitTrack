@@ -31,8 +31,8 @@ public class WorkoutPlanLogFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view,
                               @Nullable Bundle savedInstanceState) {
-        TabLayout tabLayout = view.findViewById(R.id.tabLayoutDaysLog);
-        ViewPager2 viewPager = view.findViewById(R.id.viewPagerDaysLog);
+        TabLayout    tabLayout = view.findViewById(R.id.tabLayoutDaysLog);
+        ViewPager2   viewPager = view.findViewById(R.id.viewPagerDaysLog);
 
         FragmentStateAdapter pagerAdapter = new FragmentStateAdapter(this) {
             @Override
@@ -43,10 +43,10 @@ public class WorkoutPlanLogFragment extends Fragment {
             @NonNull
             @Override
             public Fragment createFragment(int position) {
-                DayPlannerFragment fragment = new DayPlannerFragment();
+                // Just pass dayName and any other flags you need
+                DayPlannerFragment fragment = DayPlannerFragment.newInstance(DAYS[position]);
                 Bundle args = new Bundle();
-                args.putString("dayName", DAYS[position]);
-                args.putBoolean("viewOnly", true); // Pass a flag if you want different behavior
+                args.putBoolean("viewOnly", true);
                 fragment.setArguments(args);
                 return fragment;
             }

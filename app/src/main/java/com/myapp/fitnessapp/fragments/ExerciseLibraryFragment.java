@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.database.DBHelper;
+import com.myapp.fitnessapp.utils.UserSession;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,8 +72,8 @@ public class ExerciseLibraryFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        dbHelper = new DBHelper(requireContext());
-        loadExercises("All");
+        UserSession.init(requireContext());
+        dbHelper = UserSession.getDbHelper();
     }
 
     private void loadExercises(String category) {

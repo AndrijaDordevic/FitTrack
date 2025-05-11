@@ -57,7 +57,7 @@ public class WorkoutPlannerFragment extends Fragment {
             @Override
             public Fragment createFragment(int position) {
                 String dayName = DAYS[position];
-                return DayPlannerFragment.newInstance(dayName, "user@example.com");
+                return DayPlannerFragment.newInstance(dayName);
             }
         };
         viewPager.setAdapter(pagerAdapter);

@@ -1,6 +1,5 @@
 package com.myapp.fitnessapp.activities;
 
-
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -11,81 +10,113 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.navigation.NavController;
+import androidx.navigation.NavGraph;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.myapp.fitnessapp.R;
+import com.myapp.fitnessapp.utils.UserSession;
 
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Toolbar toolbar;
-    private TextView title;
+    private Toolbar       toolbar;
+    private TextView      title;
     private NavController navController;
-    private String currentUserEmail;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        // Apply saved dark mode preference
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean darkMode = prefs.getBoolean("pref_dark_mode", false);
-        AppCompatDelegate.setDefaultNightMode(
-                darkMode ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
-        );
-
-        // Retrieve signed-in user's email
-        currentUserEmail = prefs.getString("user_email", "");
-
         super.onCreate(savedInstanceState);
 
+        // 0) Init session helper
+        UserSession.init(this);
 
+        // 0a) Check Firebase + local session
+        FirebaseUser fbUser    = FirebaseAuth.getInstance().getCurrentUser();
+        String       localEmail = UserSession.getEmail();  // "" if none saved
+
+        // 1) Inflate layout
         setContentView(R.layout.activity_main);
 
-        // Setup toolbar
+        // 2) Grab NavController
+        NavHostFragment navHost = (NavHostFragment)
+                getSupportFragmentManager()
+                        .findFragmentById(R.id.nav_host_fragment);
+        navController = navHost.getNavController();
+
+        // ==== START: replace your old graphId logic with this ====
+
+        // 3) Inflate the one XML nav-graph
+        NavGraph graph = navController.getNavInflater()
+                .inflate(R.navigation.nav_graph);
+
+        // 4) Decide start destination at runtime
+        boolean signedIn = (fbUser != null && localEmail != null && !localEmail.isEmpty());
+        int startDest = signedIn
+                ? R.id.dashboardFragment
+                : R.id.welcomeFragment;
+
+        // 5) Override the graph’s startDestination
+        graph.setStartDestination(startDest);
+
+        // 6) Give the configured graph to the NavController — only once!
+        navController.setGraph(graph);
+
+        // ==== END replacement ====
+
+        // 7) Show/hide appbar & bottom-nav based on signed-in state
+        boolean showAppChrome = signedIn;
+        findViewById(R.id.appbar)
+                .setVisibility(showAppChrome ? View.VISIBLE : View.GONE);
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
+        bottomNav.setVisibility(showAppChrome ? View.VISIBLE : View.GONE);
+
+        // 5) Apply saved dark-mode
+        SharedPreferences prefs =
+                PreferenceManager.getDefaultSharedPreferences(this);
+        boolean darkMode = prefs.getBoolean("pref_dark_mode", false);
+        AppCompatDelegate.setDefaultNightMode(
+                darkMode
+                        ? AppCompatDelegate.MODE_NIGHT_YES
+                        : AppCompatDelegate.MODE_NIGHT_NO
+        );
+
+        // 6) Seed exercises only if signed in
+        if (signedIn) {
+            UserSession.getDbHelper().seedUserExercises(localEmail);
+        }
+
+        // 7) Toolbar setup
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
-
-        // Toolbar title view
         title = findViewById(R.id.toolbar_title);
 
-        // NavController
-        NavHostFragment navHost = (NavHostFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.nav_host_fragment);
-        navController = navHost.getNavController();
-
-        // Bottom navigation
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
+        // 8) Bottom-nav wiring (only does anything when visible)
         bottomNav.setOnItemSelectedListener(item -> {
-            int destId = item.getItemId();
+            int destId    = item.getItemId();
             int currentId = navController.getCurrentDestination().getId();
-
             if (currentId == destId) return true;
-
             navController.popBackStack(R.id.dashboardFragment, false);
-
-            if (destId == R.id.dayPlannerFragment) {
-                // Pass the current user's email to DayPlannerFragment
-                Bundle args = new Bundle();
-                args.putString("userEmail", currentUserEmail);
-                navController.navigate(destId, args);
-            } else {
-                navController.navigate(destId);
-            }
+            navController.navigate(destId);
             return true;
         });
 
-        // Show/hide UI elements on destination change
-        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-            boolean hide = destination.getId() == R.id.welcomeFragment
-                    || destination.getId() == R.id.signUpFragment
-                    || destination.getId() == R.id.loginFragment;
+        // 9) Show/hide back-arrow and appbar based on destination
+        navController.addOnDestinationChangedListener((c, dest, args) -> {
+            boolean hide = dest.getId() == R.id.welcomeFragment
+                    || dest.getId() == R.id.loginFragment
+                    || dest.getId() == R.id.signUpFragment
+                    || dest.getId() == R.id.profileSetupFragment;
 
-            findViewById(R.id.appbar).setVisibility(hide ? View.GONE : View.VISIBLE);
+            findViewById(R.id.appbar)
+                    .setVisibility(hide ? View.GONE : View.VISIBLE);
             bottomNav.setVisibility(hide ? View.GONE : View.VISIBLE);
             title.setVisibility(hide ? View.GONE : View.VISIBLE);
 
@@ -94,9 +125,11 @@ public class MainActivity extends AppCompatActivity {
                     R.id.profileFragment,
                     R.id.settingsFragment
             );
-            if (!hide && !topLevel.contains(destination.getId())) {
+            if (!hide && !topLevel.contains(dest.getId())) {
                 toolbar.setNavigationIcon(R.drawable.back_arrow);
-                toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+                toolbar.setNavigationOnClickListener(
+                        v -> getOnBackPressedDispatcher().onBackPressed()
+                );
             } else {
                 toolbar.setNavigationIcon(null);
             }

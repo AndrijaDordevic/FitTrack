@@ -24,7 +24,7 @@ import java.util.Locale;
 public class DBHelper extends SQLiteOpenHelper {
     private static final String TAG = "DBHelper";
     private static final String DATABASE_NAME = "FitnessApp.db";
-    private static final int DATABASE_VERSION = 21;
+    private static final int DATABASE_VERSION = 26;
 
     // Users table
     private static final String TABLE_USERS       = "users";
@@ -49,6 +49,9 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String COL_USER_EMAIL  = "user_email";
 
     private static final String TABLE_WORKOUT_LOGS = "workout_logs";
+
+    private static final String COLUMN_HEIGHT_CM  = "height_cm";
+    private static final String COLUMN_WEIGHT_KG  = "weight_kg";
     private static final String COLUMN_LOG_ID = "log_id";
     private static final String COLUMN_USER_EMAIL = "user_email";
     private static final String COLUMN_EXERCISE_ID = "exercise_id";
@@ -59,17 +62,24 @@ public class DBHelper extends SQLiteOpenHelper {
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
-
+    @Override
+    public void onConfigure(SQLiteDatabase db) {
+        super.onConfigure(db);
+        db.setForeignKeyConstraintsEnabled(true);
+    }
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS users (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "username TEXT," +
-                "email TEXT," +
-                "password TEXT," +
-                "full_name TEXT," +
-                "age INTEGER," +
-                "image_uri TEXT)");
+                "id            INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "username      TEXT," +
+                "email         TEXT UNIQUE NOT NULL," +
+                "password      TEXT," +
+                "full_name     TEXT," +
+                "age           INTEGER," +
+                "image_uri     TEXT," +
+                "height_cm     REAL," +
+                "weight_kg     REAL" +
+                ")");
 
         db.execSQL(
                 "CREATE TABLE IF NOT EXISTS " + TABLE_EXERCISES + " (" +
@@ -137,6 +147,19 @@ public class DBHelper extends SQLiteOpenHelper {
                         "('Single-Arm Row',       'Back',    'Support yourself and row in a controlled motion')," +
                         "('Hyperextension',       'Back',    'Avoid overextending, lift to a neutral spine');"
 
+        );
+
+        db.execSQL(
+                "CREATE TABLE IF NOT EXISTS user_exercises (" +
+                        "  user_email   TEXT    NOT NULL," +
+                        "  exercise_id  INTEGER NOT NULL," +
+                        "  name         TEXT    NOT NULL," +
+                        "  category     TEXT    NOT NULL," +
+                        "  tips         TEXT," +
+                        "  PRIMARY KEY(user_email,exercise_id)," +
+                        "  FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE," +
+                        "  FOREIGN KEY(user_email)   REFERENCES users(email) ON DELETE CASCADE" +
+                        ")"
         );
 
         db.execSQL(
@@ -224,18 +247,27 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Drop tables whose schema changed
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_DAY_PLAN);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_EXERCISES);
-        db.execSQL("DROP TABLE IF EXISTS workout_sets");
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_WORKOUT_LOGS);
+        // temporarily turn off FKs to allow dropping in any order
+        db.execSQL("PRAGMA foreign_keys=OFF");
 
-        // Recreate from scratch
+        // drop child tables first
+        db.execSQL("DROP TABLE IF EXISTS day_plans");
+        db.execSQL("DROP TABLE IF EXISTS workout_sets");
+        db.execSQL("DROP TABLE IF EXISTS workout_logs");
+        db.execSQL("DROP TABLE IF EXISTS nutrition_logs");
+        db.execSQL("DROP TABLE IF EXISTS user_exercises");
+
+        // then parent tables
+        db.execSQL("DROP TABLE IF EXISTS exercises");
+        db.execSQL("DROP TABLE IF EXISTS users");
+
+        // recreate fresh schema
         onCreate(db);
+
+        // re-enable FKs
+        db.execSQL("PRAGMA foreign_keys=ON");
     }
 
     /**
@@ -280,12 +312,15 @@ public class DBHelper extends SQLiteOpenHelper {
     /**
      * Update the profile fields for a user identified by email.
      */
-    public boolean updateProfile(String email, String fullName, int age, String imageUri) {
+    public boolean updateProfile(String email, String fullName, int age,
+                                 String imageUri, double heightCm, double weightKg) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_FULL_NAME, fullName);
         values.put(COLUMN_AGE, age);
         values.put(COLUMN_IMAGE_URI, imageUri);
+        values.put(COLUMN_HEIGHT_CM, heightCm);
+        values.put(COLUMN_WEIGHT_KG, weightKg);
         int rows = db.update(
                 TABLE_USERS,
                 values,
@@ -598,9 +633,9 @@ public class DBHelper extends SQLiteOpenHelper {
         List<WorkoutLogEntry> out = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
 
-        // only select the four columns
+        // 1) Select the five columns, including updated_at
         String sql =
-                "SELECT wl.day_name, wl.sets, wl.reps, wl.weight " +
+                "SELECT wl.day_name, wl.sets, wl.reps, wl.weight, wl.updated_at " +
                         "FROM workout_logs wl " +
                         "  JOIN exercises e ON wl.exercise_id = e.id " +
                         "WHERE e.category = ? AND wl.user_email = ? " +
@@ -613,7 +648,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         c.getString(0),   // day_name
                         c.getInt(1),      // sets
                         c.getInt(2),      // reps
-                        c.getFloat(3)     // weight
+                        c.getFloat(3),    // weight
+                        c.getString(4)    // updated_at
                 ));
             } while (c.moveToNext());
         }
@@ -754,6 +790,116 @@ public class DBHelper extends SQLiteOpenHelper {
 
         return getWritableDatabase()
                 .update("nutrition_logs", cv, "id = ?", new String[]{ String.valueOf(id) });
+    }
+
+    public Cursor getProfile(@NonNull String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.query(
+                TABLE_USERS,
+                new String[]{COLUMN_EMAIL, COLUMN_FULL_NAME, COLUMN_AGE, COLUMN_IMAGE_URI, COLUMN_HEIGHT_CM, COLUMN_WEIGHT_KG},
+                COLUMN_EMAIL + " = ?",
+                new String[]{email},
+                null, null, null
+        );
+    }
+
+    public void seedUserExercises(String userEmail) {
+        SQLiteDatabase db = getWritableDatabase();
+        // already seeded?
+        Cursor c = db.query(
+                "user_exercises",
+                new String[]{"exercise_id"},
+                "user_email=?",
+                new String[]{userEmail},
+                null,null,"1"
+        );
+        boolean seeded = c != null && c.moveToFirst();
+        if (c!=null) c.close();
+        if (seeded) return;
+
+        db.beginTransaction();
+        try {
+            Cursor all = db.query(
+                    "exercises",
+                    new String[]{"id","name","category","tips"},
+                    null,null,null,null,null
+            );
+            ContentValues cv = new ContentValues();
+            while(all.moveToNext()) {
+                cv.clear();
+                cv.put("user_email",   userEmail);
+                cv.put("exercise_id",  all.getInt(0));
+                cv.put("name",         all.getString(1));
+                cv.put("category",     all.getString(2));
+                cv.put("tips",         all.getString(3));
+                db.insert("user_exercises", null, cv);
+            }
+            all.close();
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    /** List only this user’s exercises, in category/name order */
+    public Cursor getUserExercises(String userEmail) {
+        return getReadableDatabase().query(
+                "user_exercises",
+                new String[]{"exercise_id AS id","name","category","tips"},
+                "user_email = ?",
+                new String[]{userEmail},
+                null,null,
+                "category,name"
+        );
+    }
+
+    public int deleteUser(String email) {
+        SQLiteDatabase db = getWritableDatabase();
+        // this will cascade-delete all day_plans, workout_sets, workout_logs, nutrition_logs, user_exercises, etc.
+        int rows = db.delete(TABLE_USERS, COLUMN_EMAIL + " = ?", new String[]{ email });
+        db.close();
+        return rows;
+    }
+
+    public boolean updateEmail(String oldEmail, String newEmail) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            // 1) Update the users table
+            ContentValues cv = new ContentValues();
+            cv.put(COLUMN_EMAIL, newEmail);
+            int rows = db.update(
+                    TABLE_USERS,
+                    cv,
+                    COLUMN_EMAIL + " = ?",
+                    new String[]{ oldEmail }
+            );
+
+            // 2) Propagate to all tables that reference user_email
+            String[] tables = {
+                    "user_exercises",
+                    "day_plans",
+                    "workout_sets",
+                    "workout_logs",
+                    "nutrition_logs"
+            };
+            ContentValues cv2 = new ContentValues();
+            cv2.put("user_email", newEmail);
+            for (String tbl : tables) {
+                db.update(
+                        tbl,
+                        cv2,
+                        "user_email = ?",
+                        new String[]{ oldEmail }
+                );
+            }
+
+            db.setTransactionSuccessful();
+            return rows > 0;
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
     }
 
 }

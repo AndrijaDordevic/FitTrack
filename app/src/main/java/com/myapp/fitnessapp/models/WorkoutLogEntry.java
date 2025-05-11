@@ -5,14 +5,14 @@ public class WorkoutLogEntry {
     private int    sets;
     private int    reps;
     private float  weight;
-    private String updatedAt;   // if you want to display the date it was logged
+    private String updatedAt;
 
     public WorkoutLogEntry(
             String dayName,
             int    sets,
             int    reps,
-            float  weight
-            // optional, only if you need it
+            float  weight,
+            String updatedAt
     ) {
         this.dayName   = dayName;
         this.sets      = sets;

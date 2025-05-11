@@ -1,31 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/welcomeFragment">
 
-    <!-- GLOBAL ACTION: logout / back-to-start -->
+    <!-- Global “go back to Welcome and clear everything” -->
     <action
-        android:id="@+id/action_global_welcomeFragment"
+        android:id="@+id/action_global_welcome"
         app:destination="@id/welcomeFragment"
-        app:popUpTo="@id/welcomeFragment"
-        app:popUpToInclusive="true" />
+        app:popUpTo="@id/nav_graph"
+        app:popUpToInclusive="true"/>
 
-    <!-- 1) Welcome → Login / SignUp -->
+    <!-- ==== SIGNED-OUT FLOW ==== -->
     <fragment
         android:id="@+id/welcomeFragment"
         android:name="com.myapp.fitnessapp.fragments.WelcomeFragment"
         tools:label="Welcome">
         <action
             android:id="@+id/action_welcome_to_login"
-            app:destination="@id/loginFragment" />
+            app:destination="@id/loginFragment"/>
         <action
             android:id="@+id/action_welcome_to_signup"
-            app:destination="@id/signUpFragment" />
+            app:destination="@id/signUpFragment"/>
+        <action
+            android:id="@+id/action_welcome_to_dashboard"
+            app:destination="@id/dashboardFragment"
+            app:popUpTo="@id/welcomeFragment"
+            app:popUpToInclusive="true"/>
     </fragment>
 
-    <!-- 2) Login → Dashboard (signed-in) -->
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.myapp.fitnessapp.fragments.LoginFragment"
@@ -33,42 +38,45 @@
         <action
             android:id="@+id/action_login_to_dashboard"
             app:destination="@id/dashboardFragment"
-            app:popUpTo="@id/welcomeFragment"
-            app:popUpToInclusive="true" />
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true"/>
         <action
-            android:id="@+id/action_login_to_signUp"
-            app:destination="@id/signUpFragment" />
+            android:id="@+id/action_login_to_signup"
+            app:destination="@id/signUpFragment"/>
     </fragment>
 
-    <!-- 3) SignUp → ProfileSetup -->
     <fragment
         android:id="@+id/signUpFragment"
         android:name="com.myapp.fitnessapp.fragments.SignUpFragment"
         tools:label="Sign Up">
         <action
-            android:id="@+id/action_signup_to_profile"
-            app:destination="@id/profileSetupFragment" />
+            android:id="@+id/action_signup_to_profileSetup"
+            app:destination="@id/profileSetupFragment"/>
     </fragment>
 
-    <!-- 4) ProfileSetup → Dashboard -->
     <fragment
         android:id="@+id/profileSetupFragment"
         android:name="com.myapp.fitnessapp.fragments.ProfileSetUpFragment"
         tools:label="Profile Setup">
-        <argument android:name="email"    app:argType="string" />
-        <argument android:name="username" app:argType="string" />
+        <argument
+            android:name="email"
+            app:argType="string"/>
+        <argument
+            android:name="username"
+            app:argType="string"/>
         <action
-            android:id="@+id/action_profile_to_dashboard"
+            android:id="@+id/action_profileSetup_to_dashboard"
             app:destination="@id/dashboardFragment"
-            app:popUpTo="@id/welcomeFragment"
-            app:popUpToInclusive="true" />
+            app:popUpTo="@id/profileSetupFragment"
+            app:popUpToInclusive="true"/>
     </fragment>
 
-    <!-- 5) Dashboard & its child-flows -->
+    <!-- ==== SIGNED-IN FLOW / TABS ==== -->
     <fragment
         android:id="@+id/dashboardFragment"
         android:name="com.myapp.fitnessapp.fragments.DashboardFragment"
         tools:label="Dashboard">
+
         <action
             android:id="@+id/action_dashboard_to_exerciseLibrary"
             app:destination="@id/exerciseLibraryFragment"/>
@@ -84,6 +92,8 @@
         <action
             android:id="@+id/action_dashboard_to_nutritionTracker"
             app:destination="@id/nutritionTrackerFragment"/>
+
+        <!-- in your toolbar/menu you can call these two to jump-->
         <action
             android:id="@+id/action_global_profile"
             app:destination="@id/profileFragment"/>
@@ -92,34 +102,35 @@
             app:destination="@id/settingsFragment"/>
     </fragment>
 
-    <!-- 6) Feature screens -->
     <fragment
         android:id="@+id/exerciseLibraryFragment"
         android:name="com.myapp.fitnessapp.fragments.ExerciseLibraryFragment"
-        tools:label="Exercise Library" />
+        tools:label="Exercise Library"/>
 
     <fragment
         android:id="@+id/workoutPlannerFragment"
         android:name="com.myapp.fitnessapp.fragments.WorkoutPlannerFragment"
-        tools:label="Workout Planner" />
+        tools:label="Workout Planner"/>
 
     <fragment
         android:id="@+id/progressFragment"
         android:name="com.myapp.fitnessapp.fragments.ProgressFragment"
-        tools:label="Progress" />
+        tools:label="Progress"/>
 
     <fragment
         android:id="@+id/timerFragment"
         android:name="com.myapp.fitnessapp.fragments.TimerFragment"
-        tools:label="Timer" />
+        tools:label="Timer"/>
 
     <fragment
         android:id="@+id/nutritionTrackerFragment"
         android:name="com.myapp.fitnessapp.fragments.NutritionTrackerFragment"
         tools:label="Nutrition Tracker">
         <action
-            android:id="@+id/action_nutritionTracker_to_dashboard"
-            app:destination="@id/dashboardFragment"/>
+            android:id="@+id/action_nutrition_to_dashboard"
+            app:destination="@id/dashboardFragment"
+            app:popUpTo="@id/nutritionTrackerFragment"
+            app:popUpToInclusive="true"/>
     </fragment>
 
     <fragment
@@ -134,23 +145,16 @@
     <fragment
         android:id="@+id/exerciseLoggingFragment"
         android:name="com.myapp.fitnessapp.fragments.ExerciseLoggingFragment"
-        tools:label="Exercise Logging" />
+        tools:label="Exercise Logging"/>
 
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.myapp.fitnessapp.fragments.ProfileFragment"
-        tools:label="Profile" />
+        tools:label="Profile"/>
 
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.myapp.fitnessapp.fragments.SettingsFragment"
-        tools:label="Settings">
-        <!-- Use the global logout action -->
-        <action
-            android:id="@+id/action_settings_to_welcome"
-            app:destination="@id/welcomeFragment"
-            app:popUpTo="@id/welcomeFragment"
-            app:popUpToInclusive="true"/>
-    </fragment>
+        tools:label="Settings"/>
 
 </navigation>

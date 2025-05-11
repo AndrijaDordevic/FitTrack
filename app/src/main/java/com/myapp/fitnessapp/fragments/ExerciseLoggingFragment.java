@@ -1,6 +1,5 @@
 package com.myapp.fitnessapp.fragments;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -18,11 +17,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.preference.PreferenceManager;
 
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.database.DBHelper;
 import com.myapp.fitnessapp.models.WorkoutSet;
+import com.myapp.fitnessapp.utils.UserSession;
 
 import java.util.List;
 import java.util.Locale;
@@ -58,14 +59,27 @@ public class ExerciseLoggingFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(requireContext());
-        userEmail = prefs.getString("user_email", "");
-        useKg      = prefs.getBoolean("use_kg", false);
+        // 1) Initialize our session helper so we get a shared DBHelper and current user
+        UserSession.init(requireContext());
 
+        // 2) Ask Firebase who’s signed in right now
+        userEmail = UserSession.getEmail();
+        if (userEmail == null) {
+            // nobody logged in → go back to Welcome
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_global_welcomeFragment);
+            return;
+        }
+
+        // 3) Load your “kg” toggle from prefs (this is purely local, not per-user)
+        useKg = PreferenceManager
+                .getDefaultSharedPreferences(requireContext())
+                .getBoolean("use_kg", false);
+
+        // 4) Pull arguments for which exercise/day we’re logging
         Bundle args = getArguments();
         if (args != null) {
             exerciseId   = args.getInt("exerciseId", -1);
@@ -105,7 +119,7 @@ public class ExerciseLoggingFragment extends Fragment {
         btnAddSet      = view.findViewById(R.id.btnAddSet);
         btnRemoveSet   = view.findViewById(R.id.btnRemoveSet);
         btnSaveWorkout = view.findViewById(R.id.btnSaveWorkout);
-        dbHelper       = new DBHelper(requireContext());
+        dbHelper = UserSession.getDbHelper();
 
         if (exerciseId == -1) {
             btnAddSet.setEnabled(false);

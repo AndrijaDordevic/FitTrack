@@ -1,28 +1,18 @@
 package com.myapp.fitnessapp.fragments;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
-// Use AppCompat SearchView for compatibility
-import androidx.appcompat.widget.SearchView;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.*;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,16 +20,11 @@ import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.adapters.DayExerciseAdapter;
 import com.myapp.fitnessapp.database.DBHelper;
 import com.myapp.fitnessapp.models.ExerciseItem;
+import com.myapp.fitnessapp.utils.UserSession;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class DayPlannerFragment extends Fragment {
-    private static final String PREFS_NAME = "app_prefs";
-    private static final String KEY_USER_EMAIL = "user_email";
-
     private String dayName;
     private String userEmail;
     private DBHelper db;
@@ -49,21 +34,17 @@ public class DayPlannerFragment extends Fragment {
     private DayExerciseAdapter summaryAdapter;
     private boolean isInEditMode;
 
-    private TextView tvPlanName;
-    private TextView tvInstructions;
-    private TextView tvPromptAdd;
+    private TextView tvPlanName, tvInstructions, tvPromptAdd;
     private Spinner spCategory;
     private CheckBox cbRest;
     private SearchView sv;
     private RecyclerView rv;
     private Button btnSave, btnClear;
 
-    public static DayPlannerFragment newInstance(String dayName, String userEmail) {
+    public static DayPlannerFragment newInstance(String dayName) {
         DayPlannerFragment frag = new DayPlannerFragment();
         Bundle args = new Bundle();
         args.putString("dayName", dayName);
-        args.putString("userEmail", userEmail);
-
         frag.setArguments(args);
         return frag;
     }
@@ -71,67 +52,41 @@ public class DayPlannerFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Read arguments
-        Bundle args = getArguments();
-        if (args != null) {
-            dayName   = args.getString("dayName");
-            userEmail = args.getString("userEmail");
+
+        // 1) Init session & DB
+        UserSession.init(requireContext());
+        db = UserSession.getDbHelper();
+
+        // 2) Figure out which user is signed in
+        userEmail = UserSession.getEmail();
+        if (userEmail == null) {
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_global_welcomeFragment);
+            return;
         }
-        // Fallback: read logged-in user from SharedPreferences
-        SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        if (TextUtils.isEmpty(userEmail)) {
-            userEmail = prefs.getString(KEY_USER_EMAIL, "");
+
+        db.seedUserExercises(userEmail);
+
+        // 3) Read dayName from args or default to today
+        if (getArguments() != null) {
+            dayName = getArguments().getString("dayName");
         }
-        // Fallback: default dayName to current day-of-week
         if (TextUtils.isEmpty(dayName)) {
-            String[] days = {"SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"};
+            String[] days = {
+                    "SUNDAY","MONDAY","TUESDAY","WEDNESDAY",
+                    "THURSDAY","FRIDAY","SATURDAY"
+            };
             int dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
             dayName = days[dow - 1];
         }
-        db = new DBHelper(requireContext());
-    }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_day_planner, container, false);
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-
-        // Bind UI
-        tvPlanName  = view.findViewById(R.id.textPlanName);
-        tvInstructions = view.findViewById(R.id.tvInstructions);
-        tvPromptAdd = view.findViewById(R.id.tvPromptAdd);
-        spCategory  = view.findViewById(R.id.spinnerCategoryFilter);
-        cbRest      = view.findViewById(R.id.checkRest);
-        sv          = view.findViewById(R.id.searchView);
-        rv          = view.findViewById(R.id.recyclerExercises);
-        btnSave     = view.findViewById(R.id.btnSaveDay);
-        btnClear    = view.findViewById(R.id.btnClearPlanner);
-
-
-        // Rename on plan title click
-        tvPlanName.setOnClickListener(v -> {
-            if (!isInEditMode) {
-                List<Integer> selected = db.getDayPlan(userEmail, dayName);
-                promptNameAndSwitch(selected);
-            }
-        });
-
-        // Load exercises
+        // 4) PRELOAD this user’s exercises
         allExercises = new ArrayList<>();
         allExercises.add(new ExerciseItem(-1, "Rest", ""));
-
-        Cursor c = db.getAllExercises();
+        Cursor c = db.getUserExercises(userEmail);
         if (c != null && c.moveToFirst()) {
-            int iId = c.getColumnIndex("id");
-            int iNm = c.getColumnIndex("name");
+            int iId  = c.getColumnIndex("id");
+            int iNm  = c.getColumnIndex("name");
             int iCat = c.getColumnIndex("category");
             do {
                 allExercises.add(new ExerciseItem(
@@ -144,14 +99,51 @@ public class DayPlannerFragment extends Fragment {
         }
         Collections.sort(allExercises, (a, b) -> {
             int cmp = a.getCategory().compareToIgnoreCase(b.getCategory());
-            return cmp != 0 ? cmp : a.getName().compareToIgnoreCase(b.getName());
+            return cmp != 0
+                    ? cmp
+                    : a.getName().compareToIgnoreCase(b.getName());
+        });
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_day_planner,
+                container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view,
+                              @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        // Bind UI
+        tvPlanName    = view.findViewById(R.id.textPlanName);
+        tvInstructions= view.findViewById(R.id.tvInstructions);
+        tvPromptAdd   = view.findViewById(R.id.tvPromptAdd);
+        spCategory    = view.findViewById(R.id.spinnerCategoryFilter);
+        cbRest        = view.findViewById(R.id.checkRest);
+        sv            = view.findViewById(R.id.searchView);
+        rv            = view.findViewById(R.id.recyclerExercises);
+        btnSave       = view.findViewById(R.id.btnSaveDay);
+        btnClear      = view.findViewById(R.id.btnClearPlanner);
+
+        // Rename on plan title click
+        tvPlanName.setOnClickListener(v -> {
+            if (!isInEditMode) {
+                List<Integer> selected = db.getDayPlan(userEmail, dayName);
+                promptNameAndSwitch(selected);
+            }
         });
 
-        // Setup category spinner
+        // SETUP category spinner from user_exercises
         List<String> cats = new ArrayList<>();
         cats.add("All");
         Cursor cc = db.getReadableDatabase().rawQuery(
-                "SELECT DISTINCT category FROM exercises", null
+                "SELECT DISTINCT category FROM user_exercises WHERE user_email = ?",
+                new String[]{ userEmail }
         );
         if (cc != null && cc.moveToFirst()) {
             int idx = cc.getColumnIndex("category");
@@ -161,13 +153,17 @@ public class DayPlannerFragment extends Fragment {
             cc.close();
         }
         ArrayAdapter<String> catAd = new ArrayAdapter<>(
-                requireContext(), android.R.layout.simple_spinner_item, cats
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                cats
         );
-        catAd.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        catAd.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
         spCategory.setAdapter(catAd);
 
         // RecyclerView & Adapters
-        fullAdapter = new DayExerciseAdapter(allExercises);
+        fullAdapter    = new DayExerciseAdapter(allExercises);
         summaryAdapter = new DayExerciseAdapter(new ArrayList<>());
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -188,78 +184,116 @@ public class DayPlannerFragment extends Fragment {
                 // Save the day plan
                 db.saveDayPlan(userEmail, dayName, sel);
 
-                // Save workout_sets + workout_logs for each selected exercise
+                // Log sets & workouts
                 for (int exerciseId : sel) {
-                    ExerciseItem exercise = findExerciseById(exerciseId);
+                    ExerciseItem exercise =
+                            findExerciseById(exerciseId);
                     if (exercise == null) continue;
 
                     int sets = exercise.getSets();
                     int reps = exercise.getReps();
                     float w  = exercise.getWeight();
-
-                    // 1) Only log if the user actually entered non‐zero values:
+                    // skip if not fully populated
                     if (sets <= 0 || reps <= 0 || w <= 0f) {
-                        // skip logging entirely
                         continue;
                     }
 
-                    // 2) Persist each set into workout_sets
+                    // Persist each set
                     for (int sn = 1; sn <= sets; sn++) {
-                        if (db.hasWorkoutSet(exerciseId, sn, userEmail)) {
-                            db.updateWorkoutSet(exerciseId, sn, reps, w, userEmail, dayName);
+                        if (db.hasWorkoutSet(
+                                exerciseId, sn,
+                                userEmail)) {
+                            db.updateWorkoutSet(
+                                    exerciseId, sn,
+                                    reps, w,
+                                    userEmail, dayName
+                            );
                         } else {
-                            db.insertWorkoutSet(exerciseId, sn, reps, w, userEmail, dayName);
+                            db.insertWorkoutSet(
+                                    exerciseId, sn,
+                                    reps, w,
+                                    userEmail, dayName
+                            );
                         }
                     }
-
-                    // 3) Now snapshot only fully‐populated workouts into workout_logs
-                    db.saveLogEntry(userEmail, exerciseId, dayName, sets, reps, w);
+                    // Snapshot complete workout
+                    db.saveLogEntry(
+                            userEmail, exerciseId,
+                            dayName, sets, reps, w
+                    );
                 }
-
                 promptNameAndSwitch(sel);
+
             } else {
-                enterEditMode(db.getDayPlan(userEmail, dayName));
+                enterEditMode(
+                        db.getDayPlan(userEmail, dayName)
+                );
             }
         });
 
-
         // Clear button
         btnClear.setOnClickListener(v -> {
-            db.saveDayPlan(userEmail, dayName, new ArrayList<>());
+            db.saveDayPlan(userEmail, dayName,
+                    new ArrayList<>());
             db.savePlanName(userEmail, dayName, "");
             cbRest.setChecked(false);
             spCategory.setSelection(0);
             sv.setQuery("", false);
             enterEditMode(new ArrayList<>());
-            Toast.makeText(requireContext(), dayName + " planner cleared", Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                    requireContext(),
+                    dayName + " planner cleared",
+                    Toast.LENGTH_SHORT
+            ).show();
         });
 
-        // Filters listeners
-        spCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view1, int pos, long id) {
-                if (isInEditMode) {
-                    String cat = cats.get(pos);
-                    fullAdapter.filterByCategory("All".equals(cat) ? null : cat);
-                }
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        // Filters
+        spCategory.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(
+                            AdapterView<?> parent,
+                            View view1,
+                            int pos,
+                            long id
+                    ) {
+                        if (isInEditMode) {
+                            String cat = cats.get(pos);
+                            fullAdapter.filterByCategory(
+                                    "All".equals(cat)
+                                            ? null
+                                            : cat
+                            );
+                        }
+                    }
+                    @Override
+                    public void onNothingSelected(
+                            AdapterView<?> parent) {}
+                });
 
-        sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) { return false; }
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                if (isInEditMode) fullAdapter.filterByName(newText);
-                return true;
-            }
-        });
+        sv.setOnQueryTextListener(
+                new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(
+                            String query) {
+                        return false;
+                    }
+                    @Override
+                    public boolean onQueryTextChange(
+                            String newText) {
+                        if (isInEditMode) {
+                            fullAdapter.filterByName(newText);
+                        }
+                        return true;
+                    }
+                });
 
-        cbRest.setOnCheckedChangeListener((buttonView, checked) -> {
-            if (isInEditMode) fullAdapter.setRestOnly(checked);
-        });
+        cbRest.setOnCheckedChangeListener(
+                (buttonView, checked) -> {
+                    if (isInEditMode) {
+                        fullAdapter.setRestOnly(checked);
+                    }
+                });
     }
 
     private void enterEditMode(List<Integer> pre) {
@@ -290,7 +324,9 @@ public class DayPlannerFragment extends Fragment {
         }
         tvPlanName.setVisibility(View.VISIBLE);
         tvInstructions.setVisibility(View.VISIBLE);
-        tvPlanName.setOnClickListener(v -> promptNameAndSwitch(ids));
+        tvPlanName.setOnClickListener(
+                v -> promptNameAndSwitch(ids)
+        );
 
         spCategory.setVisibility(View.GONE);
         sv.setVisibility(View.GONE);
@@ -305,14 +341,14 @@ public class DayPlannerFragment extends Fragment {
                 }
             }
         }
-
         summaryAdapter = new DayExerciseAdapter(sel);
         summaryAdapter.setSelectionEnabled(false);
         rv.setAdapter(summaryAdapter);
     }
 
     private void promptNameAndSwitch(List<Integer> selection) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        AlertDialog.Builder builder =
+                new AlertDialog.Builder(requireContext());
         builder.setTitle("Name Your Workout Plan");
 
         String current = db.getPlanName(userEmail, dayName);
@@ -324,24 +360,41 @@ public class DayPlannerFragment extends Fragment {
         input.setSelection(current.length());
         builder.setView(input);
 
-        builder.setPositiveButton("Save", (dialog, which) -> {
-            String name = input.getText().toString().trim();
-            if (!TextUtils.isEmpty(name)) {
-                db.savePlanName(userEmail, dayName, name);
-                tvPlanName.setText(name);
-                Toast.makeText(requireContext(), "Plan named: " + name, Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(requireContext(), "No name entered; using default", Toast.LENGTH_SHORT).show();
-            }
-            enterSummaryMode(selection);
-        });
+        builder.setPositiveButton(
+                "Save", (dialog, which) -> {
+                    String name = input.getText()
+                            .toString()
+                            .trim();
+                    if (!TextUtils.isEmpty(name)) {
+                        db.savePlanName(
+                                userEmail, dayName, name
+                        );
+                        tvPlanName.setText(name);
+                        Toast.makeText(
+                                requireContext(),
+                                "Plan named: " + name,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    } else {
+                        Toast.makeText(
+                                requireContext(),
+                                "No name entered; using default",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                    enterSummaryMode(selection);
+                });
 
-        builder.setNegativeButton("Skip", (dialog, which) -> enterSummaryMode(selection));
+        builder.setNegativeButton(
+                "Skip",
+                (dialog, which) ->
+                        enterSummaryMode(selection)
+        );
         builder.show();
     }
 
     private ExerciseItem findExerciseById(int id) {
-        for (ExerciseItem item : allExercises) { // or wherever you have the full list
+        for (ExerciseItem item : allExercises) {
             if (item.getId() == id) {
                 return item;
             }

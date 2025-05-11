@@ -1,6 +1,5 @@
 package com.myapp.fitnessapp.fragments;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -15,11 +14,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
-import androidx.preference.PreferenceManager;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.database.DBHelper;
 import com.myapp.fitnessapp.models.WorkoutLogEntry;
+import com.myapp.fitnessapp.utils.UserSession;
 
 import java.util.HashSet;
 import java.util.List;
@@ -39,14 +40,26 @@ public class ProgressFragment extends Fragment {
             @Nullable Bundle savedInstanceState
     ) {
         View view = inflater.inflate(R.layout.fragment_progress, container, false);
-        db = new DBHelper(requireContext());
 
-        SharedPreferences prefs =
-                PreferenceManager.getDefaultSharedPreferences(requireContext());
-        userEmail = prefs.getString("user_email", "");
+        // 1) Initialize shared DB helper
+        UserSession.init(requireContext());
+        db = UserSession.getDbHelper();
 
+        // 2) Get current Firebase user
+        FirebaseUser fb = FirebaseAuth.getInstance().getCurrentUser();
+        if (fb == null || fb.getEmail() == null) {
+            Toast.makeText(requireContext(),
+                            "Please log in first", Toast.LENGTH_SHORT)
+                    .show();
+            // Optionally navigate back to login/welcome here
+            return view;
+        }
+        userEmail = fb.getEmail();
+
+        // 3) Wire up container and render
         categoryContainer = view.findViewById(R.id.categoryContainer);
         populateStats();
+
         return view;
     }
 
@@ -57,137 +70,128 @@ public class ProgressFragment extends Fragment {
     }
 
     private void populateStats() {
-        // 1) Read the user's unit preference
-        boolean useKg = PreferenceManager
-                .getDefaultSharedPreferences(requireContext())
+        // 1) Read weight unit preference (we still store that in prefs)
+        boolean useKg = getContext()
+                .getSharedPreferences("settings", 0)
                 .getBoolean("use_kg", false);
 
-        // 2) Clear out any old views
+        // 2) Clear out old
         categoryContainer.removeAllViews();
 
-        // 3) Loop each exercise-category
+        // 3) Loop categories
         List<String> categories = db.getAllCategories();
         for (String category : categories) {
-            // --- HEADER ---
+            // — Header
             TextView header = new TextView(requireContext());
             header.setText(category);
             header.setTextSize(20f);
             header.setPadding(0, 16, 0, 8);
-            // resolve colorOnBackground
             TypedValue tv = new TypedValue();
             requireContext().getTheme()
-                    .resolveAttribute(com.google.android.material.R.attr.colorOnBackground, tv, true);
-
-            int textColor = tv.data;
-            header.setTextColor(textColor);
+                    .resolveAttribute(
+                            com.google.android.material.R.attr.colorOnBackground,
+                            tv, true
+                    );
+            header.setTextColor(tv.data);
             categoryContainer.addView(header);
 
-            // --- FETCH LOG ENTRIES FOR THIS CATEGORY ---
+            // — Fetch logs
             List<WorkoutLogEntry> entries =
                     db.getLogEntriesByCategory(category, userEmail);
 
             if (entries.isEmpty()) {
-                // no history case
-                TextView empty = new TextView(requireContext());
-                empty.setText("No recorded history for " + category);
-                empty.setTextSize(17f);
-                empty.setPadding(0, 0, 0, 16);
-                empty.setTextColor(textColor);
-                categoryContainer.addView(empty);
+                TextView none = new TextView(requireContext());
+                none.setText("No history for " + category);
+                none.setTextSize(17f);
+                none.setPadding(0, 0, 0, 16);
+                none.setTextColor(tv.data);
+                categoryContainer.addView(none);
                 continue;
             }
 
-            // --- AGGREGATE YOUR STATS ---
-            Set<String> sessions     = new HashSet<>();
-            int         sumReps      = 0;
-            float       maxWeightLbs = 0f;
-
+            // — Aggregate
+            Set<String> sessions = new HashSet<>();
+            int sumReps = 0;
+            float maxLbs = 0f;
             for (WorkoutLogEntry e : entries) {
-                sumReps      += e.getReps();
-                if (e.getWeight() > maxWeightLbs) {
-                    maxWeightLbs = e.getWeight();
+                sumReps += e.getReps();
+                sessions.add(e.getDayName());
+                if (e.getWeight() > maxLbs) {
+                    maxLbs = e.getWeight();
                 }
             }
+            int totalSessions = sessions.size();
+            double avgReps = sumReps / (double) entries.size();
 
-            int   totalSessions = sessions.size();
-            double avgReps      = sumReps / (double) entries.size();
+            // — Compute weight display
+            float displayW = useKg
+                    ? (maxLbs / 2.20462f)
+                    : maxLbs;
+            float dispRounded = Math.round(displayW * 10f) / 10f;
+            String unit = useKg ? "kg" : "lbs";
 
-            // --- ROUND THE DISPLAYED MAX-WEIGHT to 1 decimal ---
-            float rawDisplayW = useKg
-                    ? (maxWeightLbs / 2.20462f)
-                    : maxWeightLbs;
-            float displayMaxW = Math.round(rawDisplayW * 10f) / 10f;
-            String unit       = useKg ? "kg" : "lbs";
+            float estVolume = (float) avgReps * dispRounded;
 
-            // --- COMPUTE estVolume = avgReps × roundedDisplayMaxW ---
-            float estVolume = (float) avgReps * displayMaxW;
-
-            // --- BUILD A CARDVIEW FOR THIS CATEGORY ---
+            // — Build card
             CardView card = new CardView(requireContext());
             card.setRadius(8f);
             card.setCardElevation(4f);
-            LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
             );
-            cardLp.setMargins(0, 0, 0, 16);
-            card.setLayoutParams(cardLp);
+            lp.setMargins(0, 0, 0, 16);
+            card.setLayoutParams(lp);
 
             LinearLayout inner = new LinearLayout(requireContext());
             inner.setOrientation(LinearLayout.VERTICAL);
             inner.setPadding(12, 12, 12, 12);
 
-            // total sessions
-            TextView tvTotal = new TextView(requireContext());
-            tvTotal.setText("Total Sessions: " + totalSessions);
-            tvTotal.setTextColor(textColor);
-            inner.addView(tvTotal);
+            TextView tv1 = new TextView(requireContext());
+            tv1.setText("Sessions: " + totalSessions);
+            tv1.setTextColor(tv.data);
+            inner.addView(tv1);
 
-            // estVolume (avg × max)
-            TextView tvVol = new TextView(requireContext());
-            tvVol.setText(String.format(
+            TextView tv2 = new TextView(requireContext());
+            tv2.setText(String.format(
                     Locale.getDefault(),
-                    "Volume: %.1f %s",
-                    estVolume, unit));
-            tvVol.setPadding(0, 4, 0, 0);
-            tvVol.setTextColor(textColor);
-            inner.addView(tvVol);
+                    "Volume: %.1f %s", estVolume, unit
+            ));
+            tv2.setTextColor(tv.data);
+            tv2.setPadding(0, 4, 0, 0);
+            inner.addView(tv2);
 
-            // avg reps
-            TextView tvAvg = new TextView(requireContext());
-            tvAvg.setText(String.format(
+            TextView tv3 = new TextView(requireContext());
+            tv3.setText(String.format(
                     Locale.getDefault(),
-                    "Avg Reps: %.1f",
-                    avgReps));
-            tvAvg.setPadding(0, 4, 0, 0);
-            tvAvg.setTextColor(textColor);
-            inner.addView(tvAvg);
+                    "Avg Reps: %.1f", avgReps
+            ));
+            tv3.setTextColor(tv.data);
+            tv3.setPadding(0, 4, 0, 0);
+            inner.addView(tv3);
 
-            // max weight (rounded)
-            TextView tvMax = new TextView(requireContext());
-            tvMax.setText(String.format(
+            TextView tv4 = new TextView(requireContext());
+            tv4.setText(String.format(
                     Locale.getDefault(),
-                    "Max Weight: %.1f %s",
-                    displayMaxW, unit));
-            tvMax.setPadding(0, 4, 0, 0);
-            tvMax.setTextColor(textColor);
-            inner.addView(tvMax);
+                    "Max: %.1f %s", dispRounded, unit
+            ));
+            tv4.setTextColor(tv.data);
+            tv4.setPadding(0, 4, 0, 0);
+            inner.addView(tv4);
 
-            // clear history button
-            Button clearBtn = new Button(requireContext());
-            clearBtn.setText("Clear History");
-            clearBtn.setPadding(0, 12, 0, 0);
-            clearBtn.setOnClickListener(v -> {
-                List<Integer> exerciseIds =
-                        db.getExerciseIdsByCategory(category);
-                int deleted = db.deleteLogEntriesByExerciseIds(
-                        exerciseIds, userEmail);
+            Button clear = new Button(requireContext());
+            clear.setText("Clear History");
+            clear.setPadding(0, 12, 0, 0);
+            clear.setOnClickListener(v -> {
+                List<Integer> ids = db.getExerciseIdsByCategory(category);
+                int deleted = db.deleteLogEntriesByExerciseIds(ids, userEmail);
                 Toast.makeText(requireContext(),
-                        "Cleared " + deleted + " entries for " + category,
-                        Toast.LENGTH_SHORT).show();
+                        "Deleted " + deleted + " entries",
+                        Toast.LENGTH_SHORT
+                ).show();
                 populateStats();
             });
-            inner.addView(clearBtn);
+            inner.addView(clear);
 
             card.addView(inner);
             categoryContainer.addView(card);

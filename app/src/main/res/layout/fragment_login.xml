@@ -7,35 +7,60 @@
     android:padding="24dp"
     android:gravity="center_horizontal">
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:textColor="@color/onBackground"
+        android:text="Log in"
+        android:textSize="24dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:layout_marginStart="2dp"
+        android:textColor="@color/onBackground"
+        android:textSize="18dp"
+        android:textStyle="bold"
+        android:text="Email"/>
     <EditText
         android:id="@+id/emailEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
         android:hint="Email"
-        android:inputType="textEmailAddress"
-        android:layout_marginBottom="16dp"/>
+        android:inputType="textEmailAddress" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="18dp"
+        android:layout_marginStart="2dp"
+        android:textStyle="bold"
+        android:textColor="@color/onBackground"
+        android:text="Password"/>
 
     <EditText
         android:id="@+id/passwordEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
         android:hint="Password"
-        android:inputType="textPassword"
-        android:layout_marginBottom="24dp"/>
+        android:inputType="textPassword" />
 
     <Button
         android:id="@+id/loginButton"
-        android:layout_width="wrap_content"
+        android:layout_width="98dp"
         android:layout_height="wrap_content"
-        android:text="Login"
-        android:layout_marginBottom="12dp"/>
+        android:layout_marginBottom="12dp"
+        android:text="Login" />
 
     <Button
         android:id="@+id/signUpButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sign Up"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="24dp"
+        android:text="Sign Up" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -46,8 +71,9 @@
 
     <com.google.android.gms.common.SignInButton
         android:id="@+id/googleSignInButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"/>
+        android:layout_width="253dp"
+        android:layout_height="41dp"
+        android:layout_marginTop="16dp"
+        android:textAlignment="center" />
 
 </LinearLayout>

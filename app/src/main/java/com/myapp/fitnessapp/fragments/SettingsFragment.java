@@ -1,45 +1,234 @@
 package com.myapp.fitnessapp.fragments;
 
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.text.InputType;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.preference.Preference;
+import androidx.navigation.NavController;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.preference.PreferenceFragmentCompat;
-import androidx.preference.SwitchPreferenceCompat;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.UserInfo;
 import com.myapp.fitnessapp.R;
+import com.myapp.fitnessapp.activities.MainActivity;
+import com.myapp.fitnessapp.database.DBHelper;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
-    private static final String KEY_DARK_MODE = "pref_dark_mode";
+    private static final int RC_REAUTH = 9002;
+    private FirebaseAuth mAuth;
+    private GoogleSignInClient googleSignInClient;
+    private Runnable reauthSuccessAction;
 
     @Override
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.fragment_settings, rootKey);
+        mAuth = FirebaseAuth.getInstance();
 
-        Preference togglePref = findPreference("pref_dark_mode_toggle");
-        if (togglePref != null) {
-            togglePref.setOnPreferenceClickListener(preference -> {
-                SharedPreferences prefs = PreferenceManager
-                        .getDefaultSharedPreferences(requireContext());
-                boolean isDarkMode = prefs.getBoolean(KEY_DARK_MODE, false);
-                boolean newMode = !isDarkMode;
+        // GoogleSignIn client for re-auth (used only for delete)
+        googleSignInClient = GoogleSignIn.getClient(
+                requireContext(),
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken(getString(R.string.default_web_client_id))
+                        .requestEmail()
+                        .build()
+        );
 
-                prefs.edit()
-                        .putBoolean(KEY_DARK_MODE, newMode)
-                        .commit();
+        // Dark mode toggle
+        findPreference("pref_dark_mode_toggle").setOnPreferenceClickListener(pref -> {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            boolean dark = prefs.getBoolean("pref_dark_mode", false);
+            prefs.edit().putBoolean("pref_dark_mode", !dark).apply();
+            AppCompatDelegate.setDefaultNightMode(
+                    dark ? AppCompatDelegate.MODE_NIGHT_NO : AppCompatDelegate.MODE_NIGHT_YES
+            );
+            requireActivity().recreate();
+            return true;
+        });
 
-                AppCompatDelegate.setDefaultNightMode(
-                        newMode ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
-                );
+        // Logout
+        findPreference("pref_logout").setOnPreferenceClickListener(pref -> {
+            mAuth.signOut();
+            googleSignInClient.signOut();
+            clearSavedEmail();
+            Intent intent = new Intent(requireContext(), MainActivity.class);
+            intent.addFlags(
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                            Intent.FLAG_ACTIVITY_NEW_TASK |
+                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+            );
+            startActivity(intent);
+            requireActivity().finish();
+            return true;
+        });
 
-                requireActivity().recreate();
+        // Delete account
+        findPreference("pref_delete_account").setOnPreferenceClickListener(pref -> {
+            FirebaseUser user = mAuth.getCurrentUser();
+            if (user == null || user.getEmail() == null) {
+                Toast.makeText(getContext(), "No user signed in", Toast.LENGTH_SHORT).show();
+            } else {
+                showDeleteDialog(user);
+            }
+            return true;
+        });
 
-                return true;
-            });
+        // Change password
+        findPreference("pref_change_password").setOnPreferenceClickListener(pref -> {
+            FirebaseUser user = mAuth.getCurrentUser();
+            if (user != null && user.getEmail() != null) {
+                mAuth.sendPasswordResetEmail(user.getEmail())
+                        .addOnCompleteListener(t -> Toast.makeText(
+                                getContext(),
+                                t.isSuccessful() ? "Reset link sent" : "Failed: " + t.getException().getMessage(),
+                                Toast.LENGTH_SHORT
+                        ).show());
+            }
+            return true;
+        });
+
+        // Email-change functionality removed
+    }
+
+    // Delete account and re-auth logic
+    private void showDeleteDialog(FirebaseUser user) {
+        AlertDialog dlg = new AlertDialog.Builder(requireContext())
+                .setTitle("Delete account?")
+                .setMessage("This is irreversible.\nPlease wait 5 seconds.")
+                .setPositiveButton("Delete", null)
+                .setNegativeButton("Cancel", (d, w) -> d.dismiss())
+                .create();
+        dlg.setOnShowListener(dialog -> {
+            Button btn = dlg.getButton(AlertDialog.BUTTON_POSITIVE);
+            btn.setEnabled(false);
+            new CountDownTimer(5000, 1000) {
+                int sec = 5;
+                @Override public void onTick(long m) { btn.setText("Delete (" + sec-- + ")"); }
+                @Override public void onFinish() {
+                    btn.setText("Delete");
+                    btn.setEnabled(true);
+                    btn.setOnClickListener(v -> attemptDelete(user, dlg));
+                }
+            }.start();
+        });
+        dlg.show();
+    }
+
+    private void attemptDelete(FirebaseUser user, AlertDialog dlg) {
+        user.delete().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                finalizeDeletion(user.getEmail());
+                dlg.dismiss();
+            } else {
+                Exception e = task.getException();
+                if (e instanceof FirebaseAuthRecentLoginRequiredException) {
+                    reauthSuccessAction = () -> showDeleteDialog(mAuth.getCurrentUser());
+                    promptReauth();
+                } else {
+                    Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    private void promptReauth() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+        boolean hasPassword = false;
+        for (UserInfo info : user.getProviderData()) {
+            if (EmailAuthProvider.PROVIDER_ID.equals(info.getProviderId())) {
+                hasPassword = true;
+                break;
+            }
+        }
+        if (hasPassword) {
+            EditText pwd = new EditText(requireContext());
+            pwd.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            pwd.setHint("Password");
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Re-enter Password")
+                    .setView(pwd)
+                    .setPositiveButton("OK", (d, w) -> {
+                        AuthCredential cred = EmailAuthProvider.getCredential(user.getEmail(), pwd.getText().toString());
+                        user.reauthenticate(cred).addOnCompleteListener(r -> {
+                            if (r.isSuccessful() && reauthSuccessAction != null) {
+                                reauthSuccessAction.run();
+                            } else {
+                                Toast.makeText(getContext(), "Re-auth failed: " + r.getException().getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        } else {
+            startActivityForResult(googleSignInClient.getSignInIntent(), RC_REAUTH);
         }
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_REAUTH) {
+            try {
+                GoogleSignInAccount acct = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException.class);
+                AuthCredential cred = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+                FirebaseUser user = mAuth.getCurrentUser();
+                if (user != null && reauthSuccessAction != null) {
+                    user.reauthenticate(cred).addOnCompleteListener(r -> {
+                        if (r.isSuccessful()) reauthSuccessAction.run();
+                        else Toast.makeText(getContext(), "Re-auth failed", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (ApiException ex) {
+                Toast.makeText(getContext(), "Google sign-in error", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void finalizeDeletion(String email) {
+        // Sign out from Firebase and Google
+        mAuth.signOut();
+        googleSignInClient.signOut();
+        googleSignInClient.revokeAccess();
+
+        // Remove local data
+        new DBHelper(requireContext()).deleteUser(email);
+        clearSavedEmail();
+
+        Toast.makeText(getContext(), "Account fully deleted", Toast.LENGTH_SHORT).show();
+
+        // Redirect to welcome (MainActivity) and clear back stack
+        Intent intent = new Intent(requireContext(), MainActivity.class);
+        intent.addFlags(
+                Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                        Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
+        );
+        startActivity(intent);
+        requireActivity().finish();
+    }
+
+    private void clearSavedEmail() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        prefs.edit().remove("user_email").apply();
+    }
 }

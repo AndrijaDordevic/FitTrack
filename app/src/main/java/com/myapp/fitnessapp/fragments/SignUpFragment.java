@@ -1,7 +1,6 @@
 package com.myapp.fitnessapp.fragments;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -15,7 +14,6 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.preference.PreferenceManager;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -26,9 +24,9 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GoogleAuthProvider;
-
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.database.DBHelper;
+import com.myapp.fitnessapp.utils.UserSession;
 
 public class SignUpFragment extends Fragment {
     private static final int RC_SIGN_IN = 9001;
@@ -42,25 +40,23 @@ public class SignUpFragment extends Fragment {
     private DBHelper db;
     private GoogleSignInClient mGoogleSignInClient;
 
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater,
-                             ViewGroup container,
-                             Bundle savedInstanceState) {
+    @Nullable @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_sign_up, container, false);
 
-        // --- Initialize Firebase Auth & DB ---
+        // 1) Firebase & DB
         mAuth = FirebaseAuth.getInstance();
-        db = new DBHelper(requireContext());
+        UserSession.init(requireContext());       // make sure our DBHelper singleton is ready
+        db    = UserSession.getDbHelper();
 
-        // --- Configure Google Sign-In ---
+        // 2) Google Sign-in client
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(requireContext(), gso);
 
-        // --- Find views ---
+        // 3) Find views
         emailEt         = v.findViewById(R.id.emailEditText);
         userEt          = v.findViewById(R.id.usernameEditText);
         passEt          = v.findViewById(R.id.passwordEditText);
@@ -68,11 +64,11 @@ public class SignUpFragment extends Fragment {
         googleSignUpBtn = v.findViewById(R.id.googleSignUpButton);
         progressBar     = v.findViewById(R.id.progressBar);
 
-        // --- Wire up listeners ---
+        // 4) Hook up listeners
         signUpBtn.setOnClickListener(view -> registerUser());
         googleSignUpBtn.setSize(SignInButton.SIZE_WIDE);
         googleSignUpBtn.setColorScheme(SignInButton.COLOR_DARK);
-        googleSignUpBtn.setOnClickListener(view -> signInWithGoogle());
+        googleSignUpBtn.setOnClickListener(vv -> signInWithGoogle());
 
         return v;
     }
@@ -81,7 +77,6 @@ public class SignUpFragment extends Fragment {
         String email    = emailEt.getText().toString().trim();
         String username = userEt.getText().toString().trim();
         String pass     = passEt.getText().toString().trim();
-
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(username) || TextUtils.isEmpty(pass)) {
             Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
@@ -92,19 +87,15 @@ public class SignUpFragment extends Fragment {
                 .addOnCompleteListener(requireActivity(), task -> {
                     progressBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
-                        // Save to local DB
+                        // 1) Mirror into local DB (so we have a username slot, etc)
                         db.addUser(email, username, "");
-                        // Save to prefs
-                        SharedPreferences prefs = PreferenceManager
-                                .getDefaultSharedPreferences(requireContext());
-                        prefs.edit().putString("user_email", email).apply();
 
-                        Toast.makeText(getContext(),
-                                "Registration successful!", Toast.LENGTH_SHORT).show();
+                        // 2) We're now signed into Firebase; UserSession.getEmail() will work everywhere
+                        Toast.makeText(getContext(), "Registration successful!", Toast.LENGTH_SHORT).show();
 
-                        // Navigate with args
+                        // 3) Push into profile-setup
                         Bundle args = new Bundle();
-                        args.putString("email", email);
+                        args.putString("email",    email);
                         args.putString("username", username);
                         NavHostFragment.findNavController(this)
                                 .navigate(R.id.action_signup_to_profile, args);
@@ -117,23 +108,19 @@ public class SignUpFragment extends Fragment {
     }
 
     private void signInWithGoogle() {
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
+        startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_SIGN_IN);
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
+    @Override public void onActivityResult(int req, int res, @Nullable Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task =
                     GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
-                GoogleSignInAccount account = task.getResult(ApiException.class);
-                if (account != null) {
-                    firebaseAuthWithGoogle(account.getIdToken());
-                }
+                GoogleSignInAccount acct = task.getResult(ApiException.class);
+                if (acct != null) firebaseAuthWithGoogle(acct.getIdToken());
             } catch (ApiException e) {
-                Toast.makeText(getContext(),
+                Toast.makeText(requireContext(),
                         "Google sign-in failed: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
             }
@@ -142,39 +129,32 @@ public class SignUpFragment extends Fragment {
 
     private void firebaseAuthWithGoogle(String idToken) {
         progressBar.setVisibility(View.VISIBLE);
-        mAuth.signInWithCredential(
-                GoogleAuthProvider.getCredential(idToken, null)
-        ).addOnCompleteListener(requireActivity(), task -> {
-            progressBar.setVisibility(View.GONE);
-            if (task.isSuccessful()) {
-                // Grab account details
-                GoogleSignInAccount acct =
-                        GoogleSignIn.getLastSignedInAccount(requireContext());
-                if (acct != null) {
-                    String email    = acct.getEmail();
-                    String username = acct.getDisplayName();
+        mAuth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null))
+                .addOnCompleteListener(requireActivity(), t -> {
+                    progressBar.setVisibility(View.GONE);
+                    if (t.isSuccessful()) {
+                        String email    = mAuth.getCurrentUser().getEmail();
+                        String username = mAuth.getCurrentUser().getDisplayName();
 
-                    // Save locally
-                    db.addUser(email, username, "");
-                    SharedPreferences prefs = PreferenceManager
-                            .getDefaultSharedPreferences(requireContext());
-                    prefs.edit().putString("user_email", email).apply();
+                        if (!db.checkUser(email, "")) {
+                            db.addUser(email, username, "");
+                        }
 
-                    // Navigate
-                    Bundle args = new Bundle();
-                    args.putString("email", email);
-                    args.putString("username", username);
-                    NavHostFragment.findNavController(this)
-                            .navigate(R.id.action_signup_to_profile, args);
+                        db.seedUserExercises(email);
 
-                    Toast.makeText(getContext(),
-                            "Google sign-in successful!", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(getContext(),
-                        "Authentication Failed: " + task.getException().getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+                        Bundle args = new Bundle();
+                        args.putString("email",    email);
+                        args.putString("username", username);
+                        NavHostFragment.findNavController(this)
+                                .navigate(R.id.action_signup_to_profile, args);
+
+                        Toast.makeText(getContext(),
+                                "Google sign-in successful!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(),
+                                "Authentication Failed: " + t.getException().getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }

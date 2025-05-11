@@ -1,11 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <Preference
         android:key="pref_dark_mode_toggle"
-        android:title="Toggle Dark Mode"
+        android:title="Toggle Theme"
         android:summary="Tap to switch between light and dark mode"
         android:icon="@drawable/theme_icon"
-        android:iconSpaceReserved="true" />
+        android:selectable="true" />
+
+    <Preference
+        android:key="pref_change_password"
+        android:title="Change Password"
+        android:icon="@drawable/lock"
+        android:summary="Send reset link to your email" />
+
+    <Preference
+        android:key="pref_delete_account"
+        android:title="Delete Account"
+        android:icon="@drawable/delete"
+        android:summary="Permanently delete your account" />
+
+    <Preference
+        android:key="pref_logout"
+        android:title="Log Out"
+        android:icon="@drawable/log_out"
+        android:summary="Sign out of your account" />
+
 
 </PreferenceScreen>

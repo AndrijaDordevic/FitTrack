@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.database.DBHelper;
 import com.myapp.fitnessapp.models.MealLogEntry;
+import com.myapp.fitnessapp.utils.UserSession;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -46,29 +48,32 @@ public class NutritionTrackerFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_nutrition_tracker, container, false);
 
-        // 1) Find views + init DB
+        // 1) Find views
         tvDate      = v.findViewById(R.id.tvDate);
         btnPickDate = v.findViewById(R.id.btnPickDate);
         btnAddMeal  = v.findViewById(R.id.btnAddMeal);
         rvMeals     = v.findViewById(R.id.rvMeals);
-        db          = new DBHelper(requireContext());
 
-        // 2) Load logged-in user's email
-        userEmail = PreferenceManager
-                .getDefaultSharedPreferences(requireContext())
-                .getString("user_email", null);
+        // 2) Init session & shared DB helper
+        UserSession.init(requireContext());
+        db = UserSession.getDbHelper();
+
+        // 3) Get current user or send back to welcome
+        userEmail = UserSession.getEmail();
         if (userEmail == null) {
             Toast.makeText(requireContext(),
                     "User not logged in", Toast.LENGTH_LONG).show();
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_global_welcomeFragment);
             return v;
         }
 
-        // 3) Default date → today
+        // 4) Default date → today
         Calendar cal = Calendar.getInstance();
         selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .format(cal.getTime());
 
-        // 4) Set up RecyclerView
+        // 5) Set up RecyclerView
         rvMeals.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new MealAdapter(new MealAdapter.Listener() {
             @Override
@@ -83,7 +88,7 @@ public class NutritionTrackerFragment extends Fragment {
         });
         rvMeals.setAdapter(adapter);
 
-        // 5) Display date, hook buttons, and load data
+        // 6) Display date, hook buttons, and load data
         updateDateDisplay();
         btnPickDate.setOnClickListener(view -> showDatePicker());
         btnAddMeal.setOnClickListener(view -> showAddMealDialog());
@@ -91,6 +96,7 @@ public class NutritionTrackerFragment extends Fragment {
 
         return v;
     }
+
 
     private void updateDateDisplay() {
         tvDate.setText(selectedDate);
