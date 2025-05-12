@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 1) Your App Theme -->
     <style name="Theme.MyApplication" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/onPrimary</item>
@@ -9,5 +11,20 @@
         <item name="colorOnBackground">@color/onBackground</item>
 
         <item name="materialButtonStyle">@style/Widget.MyApplication.Button</item>
+
+        <!-- override the BottomNavigationView style -->
+        <item name="bottomNavigationStyle">
+            @style/Widget.MyApplication.BottomNavView
+        </item>
     </style>
+
+    <!-- 2) Your custom BottomNavigationView widget style -->
+    <style name="Widget.MyApplication.BottomNavView"
+        parent="Widget.MaterialComponents.BottomNavigationView">
+        <!-- remove the default “pill” behind the selected item -->
+        <item name="android:background">@android:color/transparent</item>
+        <!-- remove any ripple/highlight if you like -->
+        <item name="rippleColor">@android:color/transparent</item>
+    </style>
+
 </resources>

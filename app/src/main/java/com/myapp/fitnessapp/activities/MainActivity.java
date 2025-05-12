@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.appbar)
                 .setVisibility(showAppChrome ? View.VISIBLE : View.GONE);
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
+
         bottomNav.setVisibility(showAppChrome ? View.VISIBLE : View.GONE);
 
         // 5) Apply saved dark-mode
