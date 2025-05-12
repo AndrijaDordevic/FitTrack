@@ -6,8 +6,10 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,7 +20,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
@@ -29,14 +30,14 @@ import com.myapp.fitnessapp.database.DBHelper;
 import com.myapp.fitnessapp.utils.UserSession;
 
 public class LoginFragment extends Fragment {
-
     private static final int RC_GOOGLE_SIGN_IN = 9001;
 
-    private FirebaseAuth mAuth;
+    private FirebaseAuth       mAuth;
     private GoogleSignInClient googleSignInClient;
-    private DBHelper dbHelper;
+    private DBHelper           dbHelper;
 
-    private SignInButton googleSignInButton;
+    private Button     loginBtn;
+    private Button     googleSignInButton;
     private ProgressBar progressBar;
 
     @Nullable
@@ -48,14 +49,14 @@ public class LoginFragment extends Fragment {
     ) {
         View view = inflater.inflate(R.layout.fragment_login, container, false);
 
-        // 1) Initialize Firebase Auth
+        // 1) Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        // 2) Initialize our shared DB helper
+        // 2) Local DB
         UserSession.init(requireContext());
         dbHelper = UserSession.getDbHelper();
 
-        // 3) Configure Google Sign-In
+        // 3) Google Sign-In config
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(
                 GoogleSignInOptions.DEFAULT_SIGN_IN
         )
@@ -64,26 +65,22 @@ public class LoginFragment extends Fragment {
                 .build();
         googleSignInClient = GoogleSignIn.getClient(requireContext(), gso);
 
-        // 4) View bindings
+        // 4) Find views
+        loginBtn           = view.findViewById(R.id.loginButton);
         googleSignInButton = view.findViewById(R.id.googleSignInButton);
-        progressBar       = view.findViewById(R.id.progressBar);
+        progressBar        = view.findViewById(R.id.progressBar);
 
+        // 5) Hook up listeners
+        loginBtn.setOnClickListener(v -> loginWithEmail(view));
         googleSignInButton.setOnClickListener(v -> startGoogleSignIn());
-        view.findViewById(R.id.loginButton)
-                .setOnClickListener(v -> loginWithEmail(view));
-        view.findViewById(R.id.signUpButton)
-                .setOnClickListener(v ->
-                        NavHostFragment.findNavController(this)
-                                .navigate(R.id.action_login_to_signUp)
-                );
 
         return view;
     }
 
     private void loginWithEmail(View view) {
-        String email = ((android.widget.EditText) view.findViewById(R.id.emailEditText))
+        String email = ((EditText)view.findViewById(R.id.emailEditText))
                 .getText().toString().trim();
-        String password = ((android.widget.EditText) view.findViewById(R.id.passwordEditText))
+        String password = ((EditText)view.findViewById(R.id.passwordEditText))
                 .getText().toString().trim();
 
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
@@ -110,21 +107,21 @@ public class LoginFragment extends Fragment {
     }
 
     private void startGoogleSignIn() {
-        Intent signInIntent = googleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_GOOGLE_SIGN_IN);
+        Intent intent = googleSignInClient.getSignInIntent();
+        startActivityForResult(intent, RC_GOOGLE_SIGN_IN);
     }
 
     @Override
-    public void onActivityResult(
-            int requestCode, int resultCode, @Nullable Intent data
-    ) {
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_GOOGLE_SIGN_IN) {
             Task<GoogleSignInAccount> task =
                     GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
-                GoogleSignInAccount account = task.getResult(ApiException.class);
-                firebaseAuthWithGoogle(account.getIdToken());
+                GoogleSignInAccount acct = task.getResult(ApiException.class);
+                if (acct != null) {
+                    firebaseAuthWithGoogle(acct.getIdToken());
+                }
             } catch (ApiException e) {
                 Toast.makeText(requireContext(),
                         "Google sign-in failed: " + e.getStatusCode(),
@@ -136,8 +133,7 @@ public class LoginFragment extends Fragment {
 
     private void firebaseAuthWithGoogle(String idToken) {
         progressBar.setVisibility(View.VISIBLE);
-        AuthCredential credential =
-                GoogleAuthProvider.getCredential(idToken, null);
+        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(requireActivity(), task -> {
                     progressBar.setVisibility(View.GONE);
@@ -153,18 +149,14 @@ public class LoginFragment extends Fragment {
     }
 
     private void saveUserLocallyAndNavigate() {
-        // 1) Grab email and name from FirebaseAuth
         String email = mAuth.getCurrentUser().getEmail();
         String name  = mAuth.getCurrentUser().getDisplayName();
 
-        // 2) Ensure user exists in local DB
         if (!dbHelper.checkUser(email, "")) {
             dbHelper.addUser(email, name, "");
         }
-
         dbHelper.seedUserExercises(email);
 
-        // 3) Navigate to dashboard
         Toast.makeText(requireContext(),
                 "Login successful!", Toast.LENGTH_SHORT
         ).show();

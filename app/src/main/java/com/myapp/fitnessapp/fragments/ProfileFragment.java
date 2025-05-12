@@ -13,7 +13,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -23,12 +22,15 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.database.DBHelper;
 import com.myapp.fitnessapp.utils.UserSession;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
+import java.io.File;
 import java.util.Locale;
 
 public class ProfileFragment extends Fragment {
@@ -47,23 +49,36 @@ public class ProfileFragment extends Fragment {
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
                     result -> {
-                        if (result.getResultCode() == requireActivity().RESULT_OK
-                                && result.getData() != null
-                                && result.getData().getData() != null) {
-                            imageUri = result.getData().getData();
-                            profileImageView.setImageURI(imageUri);
+                        if (result.getResultCode() == requireActivity().RESULT_OK &&
+                                result.getData() != null &&
+                                result.getData().getData() != null) {
+
+                            Uri uri = result.getData().getData();
+                            requireActivity().getContentResolver()
+                                    .takePersistableUriPermission(
+                                            uri,
+                                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    );
+
+                            imageUri = uri;
+                            // show picked image
+                            Glide.with(this)
+                                    .load(imageUri)
+                                    .placeholder(R.drawable.profile_icon)
+                                    .error(R.drawable.profile_icon)
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                    .circleCrop()
+                                    .into(profileImageView);
                         }
                     }
             );
 
-    @Nullable
-    @Override
+    @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_profile, container, false);
 
-        // 1) Bind views
         profileImageView = v.findViewById(R.id.profile_image_view);
         fullNameET       = v.findViewById(R.id.full_name_edit_text);
         ageET            = v.findViewById(R.id.age_edit_text);
@@ -73,162 +88,177 @@ public class ProfileFragment extends Fragment {
         weightUnitGroup  = v.findViewById(R.id.weight_unit_group);
         saveButton       = v.findViewById(R.id.save_button);
 
-        // 2) Init session and shared DB helper
         UserSession.init(requireContext());
 
-        // 3) Determine current user via FirebaseAuth
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null || firebaseUser.getEmail() == null) {
-            // not logged in → back to Welcome
             NavHostFragment.findNavController(this)
                     .navigate(R.id.action_global_welcomeFragment);
             return v;
         }
         userEmail = firebaseUser.getEmail();
 
-        // 4) Load profile data (or reset fields if none)
+        profileImageView.setClipToOutline(true);
+
         loadProfile();
+        setupTextWatchers();
+        setupUnitToggles();
 
-        // 5) Set up text watchers for height/weight toggling logic
-        heightET.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
-            @Override public void afterTextChanged(Editable s) {
-                if (isTogglingHeight) return;
-                String raw = s.toString().trim();
-                if (raw.isEmpty()) return;
-                try {
-                    if (heightUnitGroup.getCheckedRadioButtonId() == R.id.height_metric) {
-                        baseHeightCm = Double.parseDouble(raw);
-                    } else {
-                        String[] parts = raw.split("\\.");
-                        int ft    = Integer.parseInt(parts[0]);
-                        int inch  = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
-                        baseHeightCm = (ft * 12 + inch) * 2.54;
-                    }
-                } catch (NumberFormatException ignore) {}
-            }
-        });
-
-        weightET.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
-            @Override public void afterTextChanged(Editable s) {
-                if (isTogglingWeight) return;
-                String raw = s.toString().trim();
-                if (raw.isEmpty()) return;
-                try {
-                    if (weightUnitGroup.getCheckedRadioButtonId() == R.id.weight_metric) {
-                        baseWeightKg = Double.parseDouble(raw);
-                    } else {
-                        baseWeightKg = Double.parseDouble(raw) * 0.453592;
-                    }
-                } catch (NumberFormatException ignore) {}
-            }
-        });
-
-        // 6) Unit toggle listeners
-        heightUnitGroup.setOnCheckedChangeListener((g, id) -> {
-            isTogglingHeight = true;
-            if (id == R.id.height_metric) {
-                heightET.setHint("cm");
-                heightET.setText(baseHeightCm > 0
-                        ? String.valueOf((int) baseHeightCm) : "");
-            } else {
-                double inches = baseHeightCm / 2.54;
-                int ft    = (int)(inches / 12);
-                int inch  = (int)(inches - ft * 12);
-                heightET.setHint("ft.in");
-                heightET.setText(baseHeightCm > 0
-                        ? (ft + "." + inch) : "");
-            }
-            heightET.setSelection(heightET.getText().length());
-            isTogglingHeight = false;
-        });
-
-        weightUnitGroup.setOnCheckedChangeListener((g, id) -> {
-            isTogglingWeight = true;
-            if (id == R.id.weight_metric) {
-                weightET.setHint("kg");
-                weightET.setText(baseWeightKg > 0
-                        ? String.format(Locale.US, "%.1f", baseWeightKg) : "");
-            } else {
-                double lbs = baseWeightKg / 0.453592;
-                weightET.setHint("lb");
-                weightET.setText(baseWeightKg > 0
-                        ? String.format(Locale.US, "%.1f", lbs) : "");
-            }
-            weightET.setSelection(weightET.getText().length());
-            isTogglingWeight = false;
-        });
-
-        // 7) Image picker
         profileImageView.setOnClickListener(t -> {
-            Intent pick = new Intent(
-                    Intent.ACTION_PICK,
-                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            );
+            Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            pick.addCategory(Intent.CATEGORY_OPENABLE);
+            pick.setType("image/*");
+            pick.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             pickImageLauncher.launch(pick);
         });
 
-        // 8) Save button
         saveButton.setOnClickListener(t -> saveProfile());
-
         return v;
     }
 
     private void loadProfile() {
-        if (userEmail == null) {
-            resetProfileFields();
-            return;
-        }
-
         DBHelper db = UserSession.getDbHelper();
         Cursor c = db.getProfile(userEmail);
         if (c != null && c.moveToFirst()) {
-            // Image
+            fullNameET.setText(c.getString(c.getColumnIndexOrThrow("full_name")));
+            ageET.setText(String.valueOf(c.getInt(c.getColumnIndexOrThrow("age"))));
+            baseHeightCm = c.getDouble(c.getColumnIndexOrThrow("height_cm"));
+            baseWeightKg = c.getDouble(c.getColumnIndexOrThrow("weight_kg"));
+
             String uriStr = c.getString(c.getColumnIndexOrThrow("image_uri"));
             if (uriStr != null) {
-                imageUri = Uri.parse(uriStr);
-                profileImageView.setImageURI(imageUri);
+                File f = new File(Uri.parse(uriStr).getPath());
+                if (f.exists()) {
+                    imageUri = Uri.fromFile(f);
+                } else {
+                    imageUri = Uri.parse(uriStr);
+                }
             } else {
-                profileImageView.setImageResource(R.drawable.profile_icon);
+                imageUri = null;
             }
 
-            // Name & age
-            fullNameET.setText(
-                    c.getString(c.getColumnIndexOrThrow("full_name"))
-            );
-            ageET.setText(String.valueOf(
-                    c.getInt(c.getColumnIndexOrThrow("age"))
-            ));
+            // two separate Glide calls instead of a mismatched ternary
+            if (imageUri != null) {
+                Glide.with(this)
+                        .load(imageUri)
+                        .placeholder(R.drawable.profile_icon)
+                        .error(R.drawable.profile_icon)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .circleCrop()
+                        .into(profileImageView);
+            } else {
+                Glide.with(this)
+                        .load(R.drawable.profile_icon)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .circleCrop()
+                        .into(profileImageView);
+            }
 
-            // Base metrics
-            baseHeightCm = c.getDouble(
-                    c.getColumnIndexOrThrow("height_cm")
-            );
-            baseWeightKg = c.getDouble(
-                    c.getColumnIndexOrThrow("weight_kg")
-            );
-
-            // Initialize UI
             heightUnitGroup.check(R.id.height_metric);
             heightET.setHint("cm");
-            heightET.setText(String.valueOf((int) baseHeightCm));
-
+            heightET.setText(baseHeightCm > 0
+                    ? String.valueOf((int) baseHeightCm)
+                    : "");
             weightUnitGroup.check(R.id.weight_metric);
             weightET.setHint("kg");
-            weightET.setText(
-                    String.format(Locale.US, "%.1f", baseWeightKg)
-            );
+            weightET.setText(baseWeightKg > 0
+                    ? String.format(Locale.US,"%.1f",baseWeightKg)
+                    : "");
         } else {
             resetProfileFields();
         }
         if (c != null) c.close();
     }
 
+    private void setupTextWatchers() {
+        heightET.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s,int a,int b,int c){}
+            @Override public void onTextChanged(CharSequence s,int a,int b,int c){}
+            @Override public void afterTextChanged(Editable s) {
+                if (isTogglingHeight) return;
+                String raw = s.toString().trim();
+                if (raw.isEmpty()) return;
+                try {
+                    if (heightUnitGroup.getCheckedRadioButtonId()
+                            == R.id.height_metric) {
+                        baseHeightCm = Double.parseDouble(raw);
+                    } else {
+                        String[] parts = raw.split("\\.");
+                        int ft = Integer.parseInt(parts[0]);
+                        int inch = parts.length>1
+                                ? Integer.parseInt(parts[1]) : 0;
+                        baseHeightCm = (ft*12 + inch)*2.54;
+                    }
+                } catch (NumberFormatException ignored){}
+            }
+        });
+
+        weightET.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s,int a,int b,int c){}
+            @Override public void onTextChanged(CharSequence s,int a,int b,int c){}
+            @Override public void afterTextChanged(Editable s) {
+                if (isTogglingWeight) return;
+                String raw = s.toString().trim();
+                if (raw.isEmpty()) return;
+                try {
+                    if (weightUnitGroup.getCheckedRadioButtonId()
+                            == R.id.weight_metric) {
+                        baseWeightKg = Double.parseDouble(raw);
+                    } else {
+                        baseWeightKg = Double.parseDouble(raw)*0.453592;
+                    }
+                } catch (NumberFormatException ignored){}
+            }
+        });
+    }
+
+    private void setupUnitToggles() {
+        heightUnitGroup.setOnCheckedChangeListener((g,id)->{
+            isTogglingHeight = true;
+            if (id == R.id.height_metric) {
+                heightET.setHint("cm");
+                heightET.setText(baseHeightCm>0
+                        ? String.valueOf((int) baseHeightCm)
+                        : "");
+            } else {
+                double inches = baseHeightCm/2.54;
+                int ft = (int)(inches/12);
+                int inch = (int)(inches - ft*12);
+                heightET.setHint("ft.in");
+                heightET.setText(baseHeightCm>0
+                        ? ft + "." + inch
+                        : "");
+            }
+            heightET.setSelection(heightET.getText().length());
+            isTogglingHeight = false;
+        });
+
+        weightUnitGroup.setOnCheckedChangeListener((g,id)->{
+            isTogglingWeight = true;
+            if (id == R.id.weight_metric) {
+                weightET.setHint("kg");
+                weightET.setText(baseWeightKg>0
+                        ? String.format(Locale.US,"%.1f",baseWeightKg)
+                        : "");
+            } else {
+                double lbs = baseWeightKg/0.453592;
+                weightET.setHint("lb");
+                weightET.setText(baseWeightKg>0
+                        ? String.format(Locale.US,"%.1f",lbs)
+                        : "");
+            }
+            weightET.setSelection(weightET.getText().length());
+            isTogglingWeight = false;
+        });
+    }
+
     private void resetProfileFields() {
-        profileImageView.setImageResource(R.drawable.profile_icon);
+        Glide.with(this)
+                .load(R.drawable.profile_icon)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .circleCrop()
+                .into(profileImageView);
+
         imageUri = null;
         fullNameET.setText("");
         ageET.setText("");
@@ -247,11 +277,19 @@ public class ProfileFragment extends Fragment {
         if (name.isEmpty() || ageS.isEmpty()) {
             Toast.makeText(requireContext(),
                     "Please enter name and age",
-                    Toast.LENGTH_SHORT
-            ).show();
+                    Toast.LENGTH_SHORT).show();
             return;
         }
-        int age = Integer.parseInt(ageS);
+
+        int age;
+        try {
+            age = Integer.parseInt(ageS);
+        } catch (NumberFormatException e) {
+            Toast.makeText(requireContext(),
+                    "Invalid age format",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         DBHelper db = UserSession.getDbHelper();
         boolean ok = db.updateProfile(
@@ -265,8 +303,8 @@ public class ProfileFragment extends Fragment {
 
         Toast.makeText(requireContext(),
                 ok ? "Profile updated!" : "Update failed",
-                Toast.LENGTH_SHORT
-        ).show();
+                Toast.LENGTH_SHORT).show();
+
         if (ok) {
             NavHostFragment.findNavController(this).popBackStack();
         }

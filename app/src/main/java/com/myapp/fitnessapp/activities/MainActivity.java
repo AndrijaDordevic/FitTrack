@@ -24,8 +24,8 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Toolbar       toolbar;
-    private TextView      title;
+    private Toolbar toolbar;
+    private TextView title;
     private NavController navController;
 
     @Override
@@ -48,28 +48,26 @@ public class MainActivity extends AppCompatActivity {
                         .findFragmentById(R.id.nav_host_fragment);
         navController = navHost.getNavController();
 
-        // ==== START: replace your old graphId logic with this ====
+        // ==== ONLY on a fresh launch do we override the startDestination ====
+        if (savedInstanceState == null) {
+            // 3) Inflate the one XML nav-graph
+            NavGraph graph = navController.getNavInflater()
+                    .inflate(R.navigation.nav_graph);
 
-        // 3) Inflate the one XML nav-graph
-        NavGraph graph = navController.getNavInflater()
-                .inflate(R.navigation.nav_graph);
+            // 4) Decide start destination at runtime
+            boolean signedIn = (fbUser != null && localEmail != null && !localEmail.isEmpty());
+            int startDest = signedIn
+                    ? R.id.dashboardFragment
+                    : R.id.welcomeFragment;
 
-        // 4) Decide start destination at runtime
-        boolean signedIn = (fbUser != null && localEmail != null && !localEmail.isEmpty());
-        int startDest = signedIn
-                ? R.id.dashboardFragment
-                : R.id.welcomeFragment;
-
-        // 5) Override the graph’s startDestination
-        graph.setStartDestination(startDest);
-
-        // 6) Give the configured graph to the NavController — only once!
-        navController.setGraph(graph);
-
-        // ==== END replacement ====
+            // 5) Override and set the graph
+            graph.setStartDestination(startDest);
+            navController.setGraph(graph);
+        }
+        // =======================================================================
 
         // 7) Show/hide appbar & bottom-nav based on signed-in state
-        boolean showAppChrome = signedIn;
+        boolean showAppChrome = (fbUser != null && localEmail != null && !localEmail.isEmpty());
         findViewById(R.id.appbar)
                 .setVisibility(showAppChrome ? View.VISIBLE : View.GONE);
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
@@ -86,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         );
 
         // 6) Seed exercises only if signed in
-        if (signedIn) {
+        if (showAppChrome) {
             UserSession.getDbHelper().seedUserExercises(localEmail);
         }
 
@@ -98,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         }
         title = findViewById(R.id.toolbar_title);
 
-        // 8) Bottom-nav wiring (only does anything when visible)
+        // 8) Bottom-nav wiring
         bottomNav.setOnItemSelectedListener(item -> {
             int destId    = item.getItemId();
             int currentId = navController.getCurrentDestination().getId();

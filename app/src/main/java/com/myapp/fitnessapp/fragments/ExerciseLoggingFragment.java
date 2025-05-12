@@ -25,6 +25,7 @@ import com.myapp.fitnessapp.database.DBHelper;
 import com.myapp.fitnessapp.models.WorkoutSet;
 import com.myapp.fitnessapp.utils.UserSession;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -39,7 +40,7 @@ public class ExerciseLoggingFragment extends Fragment {
     private DBHelper     dbHelper;
 
     private ToggleButton toggleUnit;
-    private boolean useKg;
+    private boolean      useKg;
 
     public static ExerciseLoggingFragment newInstance(
             int    exerciseId,
@@ -74,7 +75,7 @@ public class ExerciseLoggingFragment extends Fragment {
             return;
         }
 
-        // 3) Load your “kg” toggle from prefs (this is purely local, not per-user)
+        // 3) Load your “kg” toggle from prefs
         useKg = PreferenceManager
                 .getDefaultSharedPreferences(requireContext())
                 .getBoolean("use_kg", false);
@@ -108,8 +109,10 @@ public class ExerciseLoggingFragment extends Fragment {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 useKg = isChecked;
+                // persist new unit
                 PreferenceManager.getDefaultSharedPreferences(requireContext())
                         .edit().putBoolean("use_kg", useKg).apply();
+                // rebuild every row, converting the weight values
                 rebuildSetRows();
             }
         });
@@ -119,7 +122,7 @@ public class ExerciseLoggingFragment extends Fragment {
         btnAddSet      = view.findViewById(R.id.btnAddSet);
         btnRemoveSet   = view.findViewById(R.id.btnRemoveSet);
         btnSaveWorkout = view.findViewById(R.id.btnSaveWorkout);
-        dbHelper = UserSession.getDbHelper();
+        dbHelper       = UserSession.getDbHelper();
 
         if (exerciseId == -1) {
             btnAddSet.setEnabled(false);
@@ -179,8 +182,12 @@ public class ExerciseLoggingFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Rebuild all the existing set-rows, converting the weight text
+     * from the *old* unit into the *new* unit.
+     */
     private void rebuildSetRows() {
-        List<String[]> data = new java.util.ArrayList<>();
+        List<String[]> data = new ArrayList<>();
         int n = layoutSets.getChildCount();
         for (int i = 0; i < n; i++) {
             View row = layoutSets.getChildAt(i);
@@ -188,8 +195,30 @@ public class ExerciseLoggingFragment extends Fragment {
                     .getText().toString();
             String weightText = ((EditText)row.findViewById(R.id.inputWeight))
                     .getText().toString();
-            data.add(new String[]{ repsText, weightText });
+
+            // convert the weightText into the newly selected unit
+            String converted = "";
+            if (!weightText.isEmpty()) {
+                try {
+                    float val = Float.parseFloat(weightText);
+                    float newVal;
+                    if (useKg) {
+                        // was lbs, now kg
+                        newVal = val / 2.20462f;
+                    } else {
+                        // was kg, now lbs
+                        newVal = val * 2.20462f;
+                    }
+                    converted = String.format(Locale.getDefault(), "%.1f", newVal);
+                } catch (NumberFormatException ex) {
+                    // if parse fails, just keep the raw text
+                    converted = weightText;
+                }
+            }
+            data.add(new String[]{ repsText, converted });
         }
+
+        // clear and re-inflate with converted values
         layoutSets.removeAllViews();
         if (data.isEmpty()) {
             addSetFields(1, "", "");
@@ -217,9 +246,11 @@ public class ExerciseLoggingFragment extends Fragment {
         etWeight.setInputType(
                 InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL
         );
+
+        // update hint to match the selected unit
         etWeight.setHint(useKg ? "Weight (kg)" : "Weight (lb)");
 
-        // Simply reuse the exact text the user or loader provided
+        // pre-fill if we were passed values
         if (!preWeight.isEmpty()) {
             etWeight.setText(preWeight);
         }
@@ -238,6 +269,7 @@ public class ExerciseLoggingFragment extends Fragment {
 
             int reps = Integer.parseInt(repsStr);
             float w  = Float.parseFloat(weightStr);
+            // convert back to pounds for storage if needed
             if (useKg) w *= 2.20462f;
 
             int setNumber = i + 1;

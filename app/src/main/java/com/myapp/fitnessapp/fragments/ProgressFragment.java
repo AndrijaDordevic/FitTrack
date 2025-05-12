@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceManager;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -51,7 +52,6 @@ public class ProgressFragment extends Fragment {
             Toast.makeText(requireContext(),
                             "Please log in first", Toast.LENGTH_SHORT)
                     .show();
-            // Optionally navigate back to login/welcome here
             return view;
         }
         userEmail = fb.getEmail();
@@ -70,9 +70,9 @@ public class ProgressFragment extends Fragment {
     }
 
     private void populateStats() {
-        // 1) Read weight unit preference (we still store that in prefs)
-        boolean useKg = getContext()
-                .getSharedPreferences("settings", 0)
+        // 1) Read weight unit preference from default prefs
+        boolean useKg = PreferenceManager
+                .getDefaultSharedPreferences(requireContext())
                 .getBoolean("use_kg", false);
 
         // 2) Clear out old
