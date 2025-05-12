@@ -11,21 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/tvSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="10dp"
-            android:gravity="center"
-            android:layout_centerHorizontal="true"
-            android:paddingBottom="16dp"
-            android:text="DASHBOARD"
-            android:textStyle="bold"
-            android:textColor="?attr/colorOnBackground"
-            android:textSize="18sp" />
-
-
 
         <!-- Exercise Library Card -->
         <androidx.cardview.widget.CardView
@@ -35,6 +20,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="12dp"
+            android:layout_marginTop="25dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp">
 
@@ -146,7 +132,8 @@
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
             android:layout_below="@id/cardWorkoutPlanner"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="12dp"
+
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp">
 
@@ -201,6 +188,7 @@
             android:layout_marginEnd="8dp"
             android:layout_below="@id/cardProgress"
             android:layout_marginBottom="12dp"
+
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp">
 
@@ -254,7 +242,7 @@
             android:layout_height="186dp"
             android:layout_below="@id/cardProgress"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="130dp"
+            android:layout_marginTop="120dp"
             android:background="@null"
             android:contentDescription="Timer Button"
             android:scaleType="fitCenter"
