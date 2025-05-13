@@ -9,6 +9,7 @@
         <item name="colorOnSecondary">@color/onSecondary</item>
         <item name="android:windowBackground">@color/background</item>
         <item name="colorOnBackground">@color/onBackground</item>
+        <item name="android:navigationBarColor">@color/colorNavBar</item>
 
         <item name="materialButtonStyle">@style/Widget.MyApplication.Button</item>
 

@@ -8,4 +8,5 @@
     <color name="onBackground">#000000</color>
     <color name="colorBackground">#FFFFFF</color>
     <color name="splash_bg">#FFFFFF</color>
+    <color name="colorNavBar">#FFFFFF</color>
 </resources>

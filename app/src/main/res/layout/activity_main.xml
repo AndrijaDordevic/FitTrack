@@ -65,7 +65,8 @@
         app:itemIconTint="@null"
         app:itemTextColor="@null"
         app:itemIconSize="32dp"
-        android:background="@android:color/white"
+        android:background="@color/colorNavBar"
         app:itemBackground="@null"/>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
