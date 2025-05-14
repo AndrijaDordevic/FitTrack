@@ -69,6 +69,12 @@ public class SignUpFragment extends Fragment {
         signUpBtn.setOnClickListener(view -> registerUser());
         googleSignUpBtn.setOnClickListener(vv -> signInWithGoogle());
 
+        v.findViewById(R.id.btnBack)
+                .setOnClickListener(back ->
+                        NavHostFragment.findNavController(SignUpFragment.this)
+                                .popBackStack()
+                );
+
         return v;
     }
 

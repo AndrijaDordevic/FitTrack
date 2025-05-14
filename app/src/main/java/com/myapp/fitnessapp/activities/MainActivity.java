@@ -1,8 +1,11 @@
 package com.myapp.fitnessapp.activities;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -25,6 +28,7 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
+    private ImageView backButton;
     private TextView title;
     private NavController navController;
 
@@ -32,51 +36,57 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 0) Init session helper
+        // 1) Draw behind both bars, then make the nav bar transparent
+        View decor = getWindow().getDecorView();
+        decor.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        );
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        // Remove any translucent flags so we can set true transparency
+        getWindow().clearFlags(
+                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
+                        WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION
+        );
+        // Status bar: transparent (you still see notifications)
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        // Navigation bar: transparent background, only buttons remain
+        getWindow().setNavigationBarColor(Color.TRANSPARENT);
+
+        // 2) Init your session helper
         UserSession.init(this);
 
-        // 0a) Check Firebase + local session
-        FirebaseUser fbUser    = FirebaseAuth.getInstance().getCurrentUser();
-        String       localEmail = UserSession.getEmail();  // "" if none saved
+        // 3) Check Firebase + local session
+        FirebaseUser fbUser  = FirebaseAuth.getInstance().getCurrentUser();
+        String    localEmail = UserSession.getEmail();  // "" if none saved
 
-        // 1) Inflate layout
+        // 4) Inflate your main layout
         setContentView(R.layout.activity_main);
 
-        // 2) Grab NavController
+        // 5) NavController setup & dynamic start destination
         NavHostFragment navHost = (NavHostFragment)
-                getSupportFragmentManager()
-                        .findFragmentById(R.id.nav_host_fragment);
+                getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
         navController = navHost.getNavController();
 
-        // ==== ONLY on a fresh launch do we override the startDestination ====
         if (savedInstanceState == null) {
-            // 3) Inflate the one XML nav-graph
-            NavGraph graph = navController.getNavInflater()
-                    .inflate(R.navigation.nav_graph);
-
-            // 4) Decide start destination at runtime
-            boolean signedIn = (fbUser != null && localEmail != null && !localEmail.isEmpty());
-            int startDest = signedIn
-                    ? R.id.dashboardFragment
-                    : R.id.welcomeFragment;
-
-            // 5) Override and set the graph
-            graph.setStartDestination(startDest);
+            NavGraph graph = navController.getNavInflater().inflate(R.navigation.nav_graph);
+            boolean signedIn = fbUser != null && localEmail != null && !localEmail.isEmpty();
+            graph.setStartDestination(
+                    signedIn ? R.id.dashboardFragment : R.id.welcomeFragment
+            );
             navController.setGraph(graph);
         }
-        // =======================================================================
 
-        // 7) Show/hide appbar & bottom-nav based on signed-in state
-        boolean showAppChrome = (fbUser != null && localEmail != null && !localEmail.isEmpty());
-        findViewById(R.id.appbar)
-                .setVisibility(showAppChrome ? View.VISIBLE : View.GONE);
+        // 6) Show/hide appbar & bottom-nav based on signed-in state
+        View appbar = findViewById(R.id.appbar);
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
-
+        boolean showAppChrome = fbUser != null && localEmail != null && !localEmail.isEmpty();
+        appbar.setVisibility(showAppChrome ? View.VISIBLE : View.GONE);
         bottomNav.setVisibility(showAppChrome ? View.VISIBLE : View.GONE);
 
-        // 5) Apply saved dark-mode
-        SharedPreferences prefs =
-                PreferenceManager.getDefaultSharedPreferences(this);
+        // 7) Apply saved dark-mode
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean darkMode = prefs.getBoolean("pref_dark_mode", false);
         AppCompatDelegate.setDefaultNightMode(
                 darkMode
@@ -84,20 +94,22 @@ public class MainActivity extends AppCompatActivity {
                         : AppCompatDelegate.MODE_NIGHT_NO
         );
 
-        // 6) Seed exercises only if signed in
+        // 8) Seed exercises if signed in
         if (showAppChrome) {
             UserSession.getDbHelper().seedUserExercises(localEmail);
         }
 
-        // 7) Toolbar setup
-        toolbar = findViewById(R.id.toolbar);
+        // 9) Toolbar + custom back-button wiring
+        toolbar    = findViewById(R.id.toolbar);
+        backButton = findViewById(R.id.toolbar_back);
+        title      = findViewById(R.id.toolbar_title);
+
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
-        title = findViewById(R.id.toolbar_title);
 
-        // 8) Bottom-nav wiring
+        // 10) Bottom-nav item selection
         bottomNav.setOnItemSelectedListener(item -> {
             int destId    = item.getItemId();
             int currentId = navController.getCurrentDestination().getId();
@@ -107,32 +119,33 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // 9) Show/hide back-arrow and appbar based on destination
-        navController.addOnDestinationChangedListener((c, dest, args) -> {
-            boolean hide = dest.getId() == R.id.welcomeFragment
+        // 11) Destination change listener for appbar & back-button
+        Set<Integer> topLevel = Set.of(
+                R.id.dashboardFragment,
+                R.id.profileFragment,
+                R.id.settingsFragment
+        );
+        navController.addOnDestinationChangedListener((nc, dest, args) -> {
+            // hide app chrome on auth flows
+            boolean hideAppbar = dest.getId() == R.id.welcomeFragment
                     || dest.getId() == R.id.loginFragment
                     || dest.getId() == R.id.signUpFragment
                     || dest.getId() == R.id.profileSetupFragment;
 
-            findViewById(R.id.appbar)
-                    .setVisibility(hide ? View.GONE : View.VISIBLE);
-            bottomNav.setVisibility(hide ? View.GONE : View.VISIBLE);
-            title.setVisibility(hide ? View.GONE : View.VISIBLE);
+            appbar.setVisibility(hideAppbar ? View.GONE : View.VISIBLE);
+            bottomNav.setVisibility(hideAppbar ? View.GONE : View.VISIBLE);
+            title.setVisibility(hideAppbar ? View.GONE : View.VISIBLE);
 
-            Set<Integer> topLevel = Set.of(
-                    R.id.dashboardFragment,
-                    R.id.profileFragment,
-                    R.id.settingsFragment
+            // show custom back-button when not top-level
+            backButton.setVisibility(
+                    !hideAppbar && !topLevel.contains(dest.getId())
+                            ? View.VISIBLE
+                            : View.GONE
             );
-            if (!hide && !topLevel.contains(dest.getId())) {
-                toolbar.setNavigationIcon(R.drawable.back_arrow);
-                toolbar.setNavigationOnClickListener(
-                        v -> getOnBackPressedDispatcher().onBackPressed()
-                );
-            } else {
-                toolbar.setNavigationIcon(null);
-            }
         });
+
+        // 12) Back-button click
+        backButton.setOnClickListener(v -> onSupportNavigateUp());
     }
 
     @Override

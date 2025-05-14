@@ -42,11 +42,11 @@
         android:id="@+id/btn_signup"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="524dp"
+        android:layout_marginTop="596dp"
         android:text="Sign up with Email"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.495"
+        app:layout_constraintHorizontal_bias="0.504"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txt_welcome"
         app:layout_constraintWidth_percent="0.7" />
@@ -60,10 +60,11 @@
         android:drawableLeft="@drawable/google_logo"
         android:text="Continue with Google"
         android:textSize="18sp"
-        app:layout_constraintTop_toBottomOf="@id/btn_signup"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.7"/>
+        app:layout_constraintHorizontal_bias="0.512"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_signup"
+        app:layout_constraintWidth_percent="0.7" />
 
     <!-- Now locked to the bottom -->
     <TextView

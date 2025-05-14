@@ -70,6 +70,12 @@ public class LoginFragment extends Fragment {
         googleSignInButton = view.findViewById(R.id.googleSignInButton);
         progressBar        = view.findViewById(R.id.progressBar);
 
+        view.findViewById(R.id.btnBack)
+                .setOnClickListener(v ->
+                        NavHostFragment.findNavController(this)
+                                .navigate(R.id.action_login_back_to_welcome)
+                );
+
         // 5) Hook up listeners
         loginBtn.setOnClickListener(v -> loginWithEmail(view));
         googleSignInButton.setOnClickListener(v -> startGoogleSignIn());

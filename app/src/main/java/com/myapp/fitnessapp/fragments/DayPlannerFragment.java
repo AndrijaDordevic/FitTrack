@@ -36,7 +36,7 @@ public class DayPlannerFragment extends Fragment {
 
     private TextView tvPlanName, tvInstructions, tvPromptAdd;
     private Spinner spCategory;
-    private CheckBox cbRest;
+
     private SearchView sv;
     private RecyclerView rv;
     private Button btnSave, btnClear;
@@ -124,7 +124,6 @@ public class DayPlannerFragment extends Fragment {
         tvInstructions= view.findViewById(R.id.tvInstructions);
         tvPromptAdd   = view.findViewById(R.id.tvPromptAdd);
         spCategory    = view.findViewById(R.id.spinnerCategoryFilter);
-        cbRest        = view.findViewById(R.id.checkRest);
         sv            = view.findViewById(R.id.searchView);
         rv            = view.findViewById(R.id.recyclerExercises);
         btnSave       = view.findViewById(R.id.btnSaveDay);
@@ -179,7 +178,7 @@ public class DayPlannerFragment extends Fragment {
         btnSave.setOnClickListener(v -> {
             if (isInEditMode) {
                 List<Integer> sel = fullAdapter.getSelectedIds();
-                if (cbRest.isChecked()) sel = Collections.singletonList(-1);
+
 
                 // Save the day plan
                 db.saveDayPlan(userEmail, dayName, sel);
@@ -236,7 +235,6 @@ public class DayPlannerFragment extends Fragment {
             db.saveDayPlan(userEmail, dayName,
                     new ArrayList<>());
             db.savePlanName(userEmail, dayName, "");
-            cbRest.setChecked(false);
             spCategory.setSelection(0);
             sv.setQuery("", false);
             enterEditMode(new ArrayList<>());
@@ -288,12 +286,6 @@ public class DayPlannerFragment extends Fragment {
                     }
                 });
 
-        cbRest.setOnCheckedChangeListener(
-                (buttonView, checked) -> {
-                    if (isInEditMode) {
-                        fullAdapter.setRestOnly(checked);
-                    }
-                });
     }
 
     private void enterEditMode(List<Integer> pre) {
@@ -304,7 +296,6 @@ public class DayPlannerFragment extends Fragment {
         tvPromptAdd.setVisibility(View.VISIBLE);
         spCategory.setVisibility(View.VISIBLE);
         sv.setVisibility(View.VISIBLE);
-        cbRest.setVisibility(View.VISIBLE);
         fullAdapter.setSelectionEnabled(true);
         fullAdapter.setSelectedIds(pre);
         fullAdapter.setRestOnly(pre.contains(-1));
@@ -330,7 +321,6 @@ public class DayPlannerFragment extends Fragment {
 
         spCategory.setVisibility(View.GONE);
         sv.setVisibility(View.GONE);
-        cbRest.setVisibility(View.GONE);
 
         List<ExerciseItem> sel = new ArrayList<>();
         for (int id : ids) {

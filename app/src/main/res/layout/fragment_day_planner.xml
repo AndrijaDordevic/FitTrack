@@ -31,13 +31,6 @@
         android:paddingVertical="8dp"
         android:layout_marginTop="8dp"/>
 
-    <!-- Rest Day checkbox -->
-<CheckBox
-android:id="@+id/checkRest"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:text="Rest Day"
-android:textColor="?attr/colorOnBackground"/>
 
 
     <!-- Category filter -->
@@ -60,7 +53,7 @@ android:layout_marginTop="8dp"/>
 android:id="@+id/tvPromptAdd"
 android:layout_width="match_parent"
 android:layout_height="wrap_content"
-android:text="Press on workout to add"
+android:text="Select an exercise"
 android:textAppearance="?attr/textAppearanceBody2"
 android:textColor="?attr/colorOnBackground"
 android:paddingVertical="8dp"

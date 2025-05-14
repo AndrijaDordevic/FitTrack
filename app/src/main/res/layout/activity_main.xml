@@ -14,32 +14,44 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <FrameLayout
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize">
+            android:layout_height="80dp"
+            android:background="?attr/colorPrimary"
+            android:gravity="bottom"
+            android:paddingBottom="8dp"
+            app:contentInsetStart="0dp"
+            app:contentInsetStartWithNavigation="0dp"
+            app:title="">
 
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?attr/colorPrimary"
-                app:title=""
-                app:titleTextColor="@android:color/white"/>
+            <!-- 1) Custom back button -->
+            <ImageView
+                android:id="@+id/toolbar_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="16dp"
+                android:layout_marginBottom="8dp"
+                android:src="@drawable/back_arrow"
+                android:visibility="gone" />
 
+            <!-- 2) Centered title -->
             <TextView
                 android:id="@+id/toolbar_title"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:gravity="center"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="8dp"
                 android:text="FitTrack"
                 android:textColor="@android:color/white"
                 android:textSize="26sp"
                 android:textStyle="bold"/>
-        </FrameLayout>
+        </androidx.appcompat.widget.Toolbar>
+
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- NavHostFragment sits between appbar and bottom_nav -->
+    <!-- NavHostFragment -->
     <fragment
         android:id="@+id/nav_host_fragment"
         android:name="androidx.navigation.fragment.NavHostFragment"
@@ -67,6 +79,4 @@
         app:itemIconSize="32dp"
         android:background="@color/colorNavBar"
         app:itemBackground="@null"/>
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>

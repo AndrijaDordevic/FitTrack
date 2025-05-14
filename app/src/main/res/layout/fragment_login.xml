@@ -7,7 +7,16 @@
     android:padding="24dp">
 
     <!-- Title -->
-
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/back_arrow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/onBackground" />
     <!-- Email Label -->
     <TextView
         android:id="@+id/titleText"
