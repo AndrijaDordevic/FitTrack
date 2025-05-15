@@ -48,17 +48,17 @@ public class NutritionTrackerFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_nutrition_tracker, container, false);
 
-        // 1) Find views
+        // Bind UI elements
         tvDate      = v.findViewById(R.id.tvDate);
         btnPickDate = v.findViewById(R.id.btnPickDate);
         btnAddMeal  = v.findViewById(R.id.btnAddMeal);
         rvMeals     = v.findViewById(R.id.rvMeals);
 
-        // 2) Init session & shared DB helper
+        // Initialize session and database helper
         UserSession.init(requireContext());
         db = UserSession.getDbHelper();
 
-        // 3) Get current user or send back to welcome
+        // Retrieve current user or redirect if not logged in
         userEmail = UserSession.getEmail();
         if (userEmail == null) {
             Toast.makeText(requireContext(),
@@ -68,12 +68,12 @@ public class NutritionTrackerFragment extends Fragment {
             return v;
         }
 
-        // 4) Default date → today
+        // Set default date to today
         Calendar cal = Calendar.getInstance();
         selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .format(cal.getTime());
 
-        // 5) Set up RecyclerView
+        // Configure RecyclerView for meal logs
         rvMeals.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new MealAdapter(new MealAdapter.Listener() {
             @Override
@@ -88,7 +88,7 @@ public class NutritionTrackerFragment extends Fragment {
         });
         rvMeals.setAdapter(adapter);
 
-        // 6) Display date, hook buttons, and load data
+        // Display date and attach button handlers
         updateDateDisplay();
         btnPickDate.setOnClickListener(view -> showDatePicker());
         btnAddMeal.setOnClickListener(view -> showAddMealDialog());
@@ -97,11 +97,12 @@ public class NutritionTrackerFragment extends Fragment {
         return v;
     }
 
-
+    // Update the date TextView with the selectedDate
     private void updateDateDisplay() {
         tvDate.setText(selectedDate);
     }
 
+    // Show a DatePickerDialog to select a date
     private void showDatePicker() {
         Calendar cal = Calendar.getInstance();
         DatePickerDialog dpd = new DatePickerDialog(requireContext(),
@@ -119,19 +120,23 @@ public class NutritionTrackerFragment extends Fragment {
         dpd.show();
     }
 
+    // Load and display meal logs for the selectedDate
     private void loadMealsForDate() {
         List<MealLogEntry> meals = db.getNutritionLogsForDate(userEmail, selectedDate);
         adapter.setMeals(meals);
     }
 
+    // Launch dialog to add a new meal entry
     private void showAddMealDialog() {
         showMealDialog("Add Meal", null);
     }
 
+    // Launch dialog to edit an existing meal entry
     private void showEditMealDialog(MealLogEntry entry) {
         showMealDialog("Edit Meal", entry);
     }
 
+    // Generic meal dialog for add/edit with validation and persistence
     private void showMealDialog(String title, @Nullable MealLogEntry entry) {
         View dialog = LayoutInflater.from(getContext())
                 .inflate(R.layout.dialog_add_meal, null);
@@ -142,7 +147,7 @@ public class NutritionTrackerFragment extends Fragment {
         EditText etC        = dialog.findViewById(R.id.etCarbs);
         EditText etF        = dialog.findViewById(R.id.etFat);
 
-        // Pre-fill if editing
+        // Pre-fill fields when editing an entry
         if (entry != null) {
             etMealType.setText(entry.getMealType());
             etFood    .setText(entry.getFood());
@@ -152,6 +157,7 @@ public class NutritionTrackerFragment extends Fragment {
             etF       .setText(String.valueOf(entry.getFat()));
         }
 
+        // Set numeric input types for nutritional values
         etCal.setInputType(InputType.TYPE_CLASS_NUMBER);
         etP  .setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         etC  .setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -164,6 +170,7 @@ public class NutritionTrackerFragment extends Fragment {
                 .setNegativeButton("Cancel", (d, which) -> d.cancel())
                 .create();
 
+        // Override positive button to validate input before dismissing
         dlg.setOnShowListener(d -> {
             Button btnSave = dlg.getButton(AlertDialog.BUTTON_POSITIVE);
             btnSave.setOnClickListener(v -> {
@@ -194,12 +201,14 @@ public class NutritionTrackerFragment extends Fragment {
         dlg.show();
     }
 
+    // Safely parse integer or return zero
     private int parseOrZero(String s) {
         if (s.isEmpty()) return 0;
         try { return Integer.parseInt(s); }
         catch (NumberFormatException e) { return 0; }
     }
 
+    // Safely parse float or return zero
     private float parseFloatOrZero(String s) {
         if (s.isEmpty()) return 0f;
         try { return Float.parseFloat(s); }
@@ -209,10 +218,11 @@ public class NutritionTrackerFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        // Close database to release resources
         db.close();
     }
 
-    // --- RecyclerView Adapter ---
+    // RecyclerView Adapter for meal entries with edit/delete callbacks
     private static class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
         interface Listener {
             void onEdit(MealLogEntry entry);
@@ -226,6 +236,7 @@ public class NutritionTrackerFragment extends Fragment {
             this.listener = listener;
         }
 
+        // Update adapter data and refresh UI
         public void setMeals(List<MealLogEntry> list) {
             meals = list;
             notifyDataSetChanged();
@@ -256,6 +267,7 @@ public class NutritionTrackerFragment extends Fragment {
                 tvEdit   = itemView.findViewById(R.id.tvEdit);
                 tvDelete = itemView.findViewById(R.id.tvDelete);
 
+                // Set edit and delete click callbacks
                 tvEdit.setOnClickListener(v -> {
                     if (current != null) listener.onEdit(current);
                 });
@@ -264,6 +276,7 @@ public class NutritionTrackerFragment extends Fragment {
                 });
             }
 
+            // Bind MealLogEntry data to UI
             void bind(MealLogEntry m) {
                 current = m;
                 tvType.setText(m.getMealType());
@@ -275,7 +288,6 @@ public class NutritionTrackerFragment extends Fragment {
                         m.getCarbs(),
                         m.getFat()
                 ));
-                // you can also style tvEdit / tvDelete here if needed
             }
         }
     }

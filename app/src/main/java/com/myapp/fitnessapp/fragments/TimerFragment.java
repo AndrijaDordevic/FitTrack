@@ -43,36 +43,42 @@ public class TimerFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        // Inflate layout and bind UI elements
         View root = inflater.inflate(R.layout.fragment_timer, container, false);
-
         textCountdown  = root.findViewById(R.id.text_countdown);
         btnStart       = root.findViewById(R.id.btn_start);
         btnPause       = root.findViewById(R.id.btn_pause);
         btnReset       = root.findViewById(R.id.btn_reset);
 
+        // Prepare notification channel for timer alerts
         createNotificationChannel();
 
+        // Set click handlers: tapping time opens picker, buttons control timer
         textCountdown.setOnClickListener(v -> showTimePickerDialog());
         btnStart.setOnClickListener(v -> startTimer());
         btnPause.setOnClickListener(v -> pauseTimer());
         btnReset.setOnClickListener(v -> resetTimer());
 
+        // Initialize display and buttons based on current state
         updateCountdownText();
         updateButtons();
         return root;
     }
 
+    // Dialog to pick minutes and seconds for the countdown
     private void showTimePickerDialog() {
         View dlg = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_time_picker, null);
         NumberPicker minP = dlg.findViewById(R.id.picker_minutes);
         NumberPicker secP = dlg.findViewById(R.id.picker_seconds);
 
+        // Configure pickers range
         minP.setMinValue(0);
         minP.setMaxValue(59);
         secP.setMinValue(0);
         secP.setMaxValue(59);
 
+        // Pre-set to current time left
         int totSec = (int)(timeLeftMillis/1000);
         minP.setValue(totSec/60);
         secP.setValue(totSec%60);
@@ -81,6 +87,7 @@ public class TimerFragment extends Fragment {
                 .setTitle("Set Timer")
                 .setView(dlg)
                 .setPositiveButton("OK", (d, w) -> {
+                    // Update countdown duration
                     int mins = minP.getValue(), secs = secP.getValue();
                     timeLeftMillis = (mins*60L + secs)*1000L;
                     updateCountdownText();
@@ -90,6 +97,7 @@ public class TimerFragment extends Fragment {
                 .show();
     }
 
+    // Start the countdown if not already running
     private void startTimer() {
         if (isRunning || timeLeftMillis <= 0) return;
         timer = new CountDownTimer(timeLeftMillis, 1000) {
@@ -107,6 +115,7 @@ public class TimerFragment extends Fragment {
         updateButtons();
     }
 
+    // Pause the countdown
     private void pauseTimer() {
         if (!isRunning) return;
         timer.cancel();
@@ -114,6 +123,7 @@ public class TimerFragment extends Fragment {
         updateButtons();
     }
 
+    // Reset countdown to zero
     private void resetTimer() {
         if (timer != null) timer.cancel();
         isRunning = false;
@@ -122,6 +132,7 @@ public class TimerFragment extends Fragment {
         updateButtons();
     }
 
+    // Update the displayed time in MM:SS format
     private void updateCountdownText() {
         int tot = (int)(timeLeftMillis/1000);
         textCountdown.setText(
@@ -129,12 +140,14 @@ public class TimerFragment extends Fragment {
         );
     }
 
+    // Enable/disable buttons based on state
     private void updateButtons() {
         btnStart.setEnabled(!isRunning && timeLeftMillis>0);
         btnPause.setEnabled(isRunning);
         btnReset.setEnabled(!isRunning && timeLeftMillis>0);
     }
 
+    // Handle timer completion: reset and notify
     private void onTimerFinished() {
         isRunning = false;
         timeLeftMillis = 0;
@@ -143,52 +156,46 @@ public class TimerFragment extends Fragment {
         maybeSendNotification();
     }
 
+    // Create a notification channel for API >= 26
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel chan = new NotificationChannel(
                     CHANNEL_ID, "Timer Alerts", NotificationManager.IMPORTANCE_DEFAULT
             );
             chan.setDescription("Notifies when a countdown ends");
-            NotificationManager nm =
-                    requireContext().getSystemService(NotificationManager.class);
+            NotificationManager nm = requireContext().getSystemService(NotificationManager.class);
             nm.createNotificationChannel(chan);
         }
     }
 
+    // Check notification permission and send if granted
     private void maybeSendNotification() {
         Context ctx = requireContext();
-        // On Android 13+, check/request permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 && ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                    REQ_POST_NOTIF
-            );
+            // Request permission on Android 13+
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_POST_NOTIF);
             return;
         }
         sendNotification();
     }
 
+    // Build and dispatch the completion notification
     private void sendNotification() {
         Context ctx = requireContext();
-
-        // Explicitly check POST_NOTIFICATIONS before trying to notify
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 && ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
-            // permission not granted → skip sending
             return;
         }
 
-        // launch intent for your app
-        Intent launch = ctx.getPackageManager()
-                .getLaunchIntentForPackage(ctx.getPackageName());
+        // Intent to reopen app when notification tapped
+        Intent launch = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
         PendingIntent pi = PendingIntent.getActivity(
                 ctx, 0, launch,
-                PendingIntent.FLAG_UPDATE_CURRENT
-                        | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                        ? PendingIntent.FLAG_IMMUTABLE : 0)
+                PendingIntent.FLAG_UPDATE_CURRENT |
+                        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
         );
 
         NotificationCompat.Builder nb = new NotificationCompat.Builder(ctx, CHANNEL_ID)
@@ -199,7 +206,6 @@ public class TimerFragment extends Fragment {
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
-        // now it's safe to call
         NotificationManagerCompat.from(ctx).notify(NOTIFICATION_ID, nb.build());
     }
 

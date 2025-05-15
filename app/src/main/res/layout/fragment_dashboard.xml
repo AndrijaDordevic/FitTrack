@@ -11,7 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-
         <!-- Exercise Library Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardExerciseLibrary"
@@ -19,8 +18,8 @@
             android:layout_height="72dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginTop="5dp"
             android:layout_marginBottom="12dp"
-            android:layout_marginTop="25dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp">
 
@@ -29,16 +28,14 @@
                 android:layout_height="match_parent"
                 android:padding="12dp">
 
-                <!-- Image -->
                 <ImageView
                     android:id="@+id/imgExerciseLibrary"
                     android:layout_width="45dp"
                     android:layout_height="52dp"
                     android:src="@drawable/library"
-                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
                     android:layout_centerVertical="true" />
 
-                <!-- Text Layout -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -55,7 +52,7 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:gravity="start"
-                        android:textColor="?attr/colorOnBackground"/>
+                        android:textColor="?attr/colorOnBackground" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -63,7 +60,7 @@
                         android:text="Browse exercises by category"
                         android:textSize="14sp"
                         android:textColor="?attr/colorOnBackground"
-                    android:gravity="start" />
+                        android:gravity="start" />
                 </LinearLayout>
             </RelativeLayout>
         </androidx.cardview.widget.CardView>
@@ -73,9 +70,9 @@
             android:id="@+id/cardWorkoutPlanner"
             android:layout_width="match_parent"
             android:layout_height="72dp"
+            android:layout_below="@id/cardExerciseLibrary"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_below="@id/cardExerciseLibrary"
             android:layout_marginBottom="12dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp">
@@ -85,16 +82,14 @@
                 android:layout_height="match_parent"
                 android:padding="12dp">
 
-                <!-- Image -->
                 <ImageView
                     android:id="@+id/imgWorkoutPlanner"
                     android:layout_width="45dp"
                     android:layout_height="52dp"
                     android:src="@drawable/calendar"
-                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
                     android:layout_centerVertical="true" />
 
-                <!-- Text Layout -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -111,7 +106,7 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:gravity="start"
-                        android:textColor="?attr/colorOnBackground"/>
+                        android:textColor="?attr/colorOnBackground" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -119,7 +114,7 @@
                         android:text="Create your weekly workouts"
                         android:textSize="14sp"
                         android:textColor="?attr/colorOnBackground"
-                    android:gravity="start" />
+                        android:gravity="start" />
                 </LinearLayout>
             </RelativeLayout>
         </androidx.cardview.widget.CardView>
@@ -129,11 +124,10 @@
             android:id="@+id/cardProgress"
             android:layout_width="match_parent"
             android:layout_height="72dp"
+            android:layout_below="@id/cardWorkoutPlanner"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_below="@id/cardWorkoutPlanner"
             android:layout_marginBottom="12dp"
-
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp">
 
@@ -142,16 +136,14 @@
                 android:layout_height="match_parent"
                 android:padding="12dp">
 
-                <!-- Image -->
                 <ImageView
                     android:id="@+id/imgProgress"
                     android:layout_width="45dp"
                     android:layout_height="52dp"
                     android:src="@drawable/progress"
-                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
                     android:layout_centerVertical="true" />
 
-                <!-- Text Layout -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -168,7 +160,7 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:gravity="start"
-                        android:textColor="?attr/colorOnBackground"/>
+                        android:textColor="?attr/colorOnBackground" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -176,19 +168,20 @@
                         android:text="View your charts and stats"
                         android:textSize="14sp"
                         android:textColor="?attr/colorOnBackground"
-                    android:gravity="start" />
+                        android:gravity="start" />
                 </LinearLayout>
             </RelativeLayout>
         </androidx.cardview.widget.CardView>
+
+        <!-- Nutrition Tracker Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardNutritionTracker"
             android:layout_width="match_parent"
             android:layout_height="72dp"
+            android:layout_below="@id/cardProgress"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_below="@id/cardProgress"
             android:layout_marginBottom="12dp"
-
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp">
 
@@ -202,8 +195,7 @@
                     android:layout_width="45dp"
                     android:layout_height="52dp"
                     android:src="@drawable/nutrition"
-                    android:layout_alignParentLeft="true"
-
+                    android:layout_alignParentStart="true"
                     android:layout_centerVertical="true" />
 
                 <LinearLayout
@@ -222,7 +214,7 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:gravity="start"
-                        android:textColor="?attr/colorOnBackground"/>
+                        android:textColor="?attr/colorOnBackground" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -235,18 +227,72 @@
             </RelativeLayout>
         </androidx.cardview.widget.CardView>
 
+        <!-- Quote of the Day Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardQuoteOfDay"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_below="@id/cardNutritionTracker"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="12dp">
+
+                <ImageView
+                    android:id="@+id/imgQuoteOfDay"
+                    android:layout_width="45dp"
+                    android:layout_height="52dp"
+                    android:src="@drawable/quill"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toEndOf="@id/imgQuoteOfDay"
+                    android:layout_marginStart="24dp"
+                    android:layout_centerVertical="true">
+
+                    <TextView
+                        android:id="@+id/tvQuoteCardTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Quote"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnBackground"/>
+
+                    <TextView
+                        android:id="@+id/tvQuoteCardDesc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Quote of the day"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnBackground"/>
+                </LinearLayout>
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+
         <!-- Timer Button -->
         <ImageButton
             android:id="@+id/btnTimer"
             android:layout_width="218dp"
             android:layout_height="186dp"
-            android:layout_below="@id/cardProgress"
+            android:layout_below="@id/cardQuoteOfDay"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="120dp"
+            android:layout_marginTop="20dp"
             android:background="@null"
             android:contentDescription="Timer Button"
             android:scaleType="fitCenter"
-            android:src="@drawable/timer_button" />
+            android:src="@drawable/timer_button"/>
+
         <!-- Timer Label -->
         <TextView
             android:id="@+id/tvTimerLabel"
@@ -258,7 +304,7 @@
             android:text="Timer"
             android:textSize="24sp"
             android:textColor="?attr/colorOnBackground"
-            android:textStyle="bold" />
+            android:textStyle="bold"/>
 
     </RelativeLayout>
 </ScrollView>

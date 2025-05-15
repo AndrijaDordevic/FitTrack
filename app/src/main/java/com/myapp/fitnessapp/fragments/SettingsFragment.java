@@ -33,6 +33,7 @@ import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.activities.MainActivity;
 import com.myapp.fitnessapp.database.DBHelper;
 
+
 public class SettingsFragment extends PreferenceFragmentCompat {
     private static final int RC_REAUTH = 9002;
     private FirebaseAuth mAuth;
@@ -42,9 +43,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     @Override
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.fragment_settings, rootKey);
+        // Initialize Firebase auth and Google client for re-auth scenarios
         mAuth = FirebaseAuth.getInstance();
-
-        // GoogleSignIn client for re-auth (used only for delete)
         googleSignInClient = GoogleSignIn.getClient(
                 requireContext(),
                 new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -53,7 +53,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                         .build()
         );
 
-        // Dark mode toggle
+        // Dark mode toggle: persist preference and recreate activity
         findPreference("pref_dark_mode_toggle").setOnPreferenceClickListener(pref -> {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
             boolean dark = prefs.getBoolean("pref_dark_mode", false);
@@ -65,23 +65,21 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             return true;
         });
 
-        // Logout
+        // Logout: sign out and clear back stack
         findPreference("pref_logout").setOnPreferenceClickListener(pref -> {
             mAuth.signOut();
             googleSignInClient.signOut();
             clearSavedEmail();
             Intent intent = new Intent(requireContext(), MainActivity.class);
-            intent.addFlags(
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                            Intent.FLAG_ACTIVITY_NEW_TASK |
-                            Intent.FLAG_ACTIVITY_CLEAR_TASK
-            );
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                    Intent.FLAG_ACTIVITY_NEW_TASK |
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             requireActivity().finish();
             return true;
         });
 
-        // Delete account
+        // Delete account: confirm and handle re-auth if needed
         findPreference("pref_delete_account").setOnPreferenceClickListener(pref -> {
             FirebaseUser user = mAuth.getCurrentUser();
             if (user == null || user.getEmail() == null) {
@@ -92,7 +90,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             return true;
         });
 
-        // Change password
+        // Password reset: send email
         findPreference("pref_change_password").setOnPreferenceClickListener(pref -> {
             FirebaseUser user = mAuth.getCurrentUser();
             if (user != null && user.getEmail() != null) {
@@ -105,11 +103,9 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             }
             return true;
         });
-
-        // Email-change functionality removed
     }
 
-    // Delete account and re-auth logic
+    // Show dialog with countdown before allowing delete
     private void showDeleteDialog(FirebaseUser user) {
         AlertDialog dlg = new AlertDialog.Builder(requireContext())
                 .setTitle("Delete account?")
@@ -120,6 +116,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         dlg.setOnShowListener(dialog -> {
             Button btn = dlg.getButton(AlertDialog.BUTTON_POSITIVE);
             btn.setEnabled(false);
+            // Countdown to prevent accidental clicks
             new CountDownTimer(5000, 1000) {
                 int sec = 5;
                 @Override public void onTick(long m) { btn.setText("Delete (" + sec-- + ")"); }
@@ -133,6 +130,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         dlg.show();
     }
 
+    // Attempt deletion; handle re-auth if required
     private void attemptDelete(FirebaseUser user, AlertDialog dlg) {
         user.delete().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
@@ -141,6 +139,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             } else {
                 Exception e = task.getException();
                 if (e instanceof FirebaseAuthRecentLoginRequiredException) {
+                    // Need to re-authenticate
                     reauthSuccessAction = () -> showDeleteDialog(mAuth.getCurrentUser());
                     promptReauth();
                 } else {
@@ -150,6 +149,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         });
     }
 
+    // Prompt user for credentials or Google to re-authenticate
     private void promptReauth() {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) return;
@@ -161,6 +161,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             }
         }
         if (hasPassword) {
+            // Ask for password
             EditText pwd = new EditText(requireContext());
             pwd.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
             pwd.setHint("Password");
@@ -170,16 +171,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     .setPositiveButton("OK", (d, w) -> {
                         AuthCredential cred = EmailAuthProvider.getCredential(user.getEmail(), pwd.getText().toString());
                         user.reauthenticate(cred).addOnCompleteListener(r -> {
-                            if (r.isSuccessful() && reauthSuccessAction != null) {
-                                reauthSuccessAction.run();
-                            } else {
-                                Toast.makeText(getContext(), "Re-auth failed: " + r.getException().getMessage(), Toast.LENGTH_LONG).show();
-                            }
+                            if (r.isSuccessful() && reauthSuccessAction != null) reauthSuccessAction.run();
+                            else Toast.makeText(getContext(), "Re-auth failed: " + r.getException().getMessage(), Toast.LENGTH_LONG).show();
                         });
                     })
                     .setNegativeButton("Cancel", null)
                     .show();
         } else {
+            // Use Google sign-in
             startActivityForResult(googleSignInClient.getSignInIntent(), RC_REAUTH);
         }
     }
@@ -204,29 +203,21 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         }
     }
 
+    // Cleanup local and remote data, then navigate
     private void finalizeDeletion(String email) {
-        // Sign out from Firebase and Google
         mAuth.signOut();
         googleSignInClient.signOut();
         googleSignInClient.revokeAccess();
-
-        // Remove local data
         new DBHelper(requireContext()).deleteUser(email);
         clearSavedEmail();
-
         Toast.makeText(getContext(), "Account fully deleted", Toast.LENGTH_SHORT).show();
-
-        // Redirect to welcome (MainActivity) and clear back stack
         Intent intent = new Intent(requireContext(), MainActivity.class);
-        intent.addFlags(
-                Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                        Intent.FLAG_ACTIVITY_NEW_TASK |
-                        Intent.FLAG_ACTIVITY_CLEAR_TASK
-        );
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
     }
 
+    // Remove stored email from preferences
     private void clearSavedEmail() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
         prefs.edit().remove("user_email").apply();

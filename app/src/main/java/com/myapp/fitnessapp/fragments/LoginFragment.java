@@ -49,14 +49,14 @@ public class LoginFragment extends Fragment {
     ) {
         View view = inflater.inflate(R.layout.fragment_login, container, false);
 
-        // 1) Firebase Auth
+        // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        // 2) Local DB
+        // Initialize local database helper via user session
         UserSession.init(requireContext());
         dbHelper = UserSession.getDbHelper();
 
-        // 3) Google Sign-In config
+        // Configure Google Sign-In to request ID token and email
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(
                 GoogleSignInOptions.DEFAULT_SIGN_IN
         )
@@ -65,30 +65,33 @@ public class LoginFragment extends Fragment {
                 .build();
         googleSignInClient = GoogleSignIn.getClient(requireContext(), gso);
 
-        // 4) Find views
+        // Bind UI elements
         loginBtn           = view.findViewById(R.id.loginButton);
         googleSignInButton = view.findViewById(R.id.googleSignInButton);
         progressBar        = view.findViewById(R.id.progressBar);
 
+        // Handle back navigation
         view.findViewById(R.id.btnBack)
                 .setOnClickListener(v ->
                         NavHostFragment.findNavController(this)
                                 .navigate(R.id.action_login_back_to_welcome)
                 );
 
-        // 5) Hook up listeners
+        // Set click listeners for login actions
         loginBtn.setOnClickListener(v -> loginWithEmail(view));
         googleSignInButton.setOnClickListener(v -> startGoogleSignIn());
 
         return view;
     }
 
+    // Email/password authentication logic
     private void loginWithEmail(View view) {
         String email = ((EditText)view.findViewById(R.id.emailEditText))
                 .getText().toString().trim();
         String password = ((EditText)view.findViewById(R.id.passwordEditText))
                 .getText().toString().trim();
 
+        // Validate input fields
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
             Toast.makeText(requireContext(),
                     "Please enter email and password",
@@ -97,6 +100,7 @@ public class LoginFragment extends Fragment {
             return;
         }
 
+        // Show loading indicator and attempt sign-in
         progressBar.setVisibility(View.VISIBLE);
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(requireActivity(), task -> {
@@ -112,6 +116,7 @@ public class LoginFragment extends Fragment {
                 });
     }
 
+    // Launch Google Sign-In intent
     private void startGoogleSignIn() {
         Intent intent = googleSignInClient.getSignInIntent();
         startActivityForResult(intent, RC_GOOGLE_SIGN_IN);
@@ -121,6 +126,7 @@ public class LoginFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_GOOGLE_SIGN_IN) {
+            // Handle Google Sign-In result
             Task<GoogleSignInAccount> task =
                     GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
@@ -137,6 +143,7 @@ public class LoginFragment extends Fragment {
         }
     }
 
+    // Authenticate with Firebase using Google credentials
     private void firebaseAuthWithGoogle(String idToken) {
         progressBar.setVisibility(View.VISIBLE);
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
@@ -154,13 +161,16 @@ public class LoginFragment extends Fragment {
                 });
     }
 
+    // Save authenticated user in local DB and navigate to dashboard
     private void saveUserLocallyAndNavigate() {
         String email = mAuth.getCurrentUser().getEmail();
         String name  = mAuth.getCurrentUser().getDisplayName();
 
+        // Add user to local DB if not already present
         if (!dbHelper.checkUser(email, "")) {
             dbHelper.addUser(email, name, "");
         }
+        // Prepare user's exercise data
         dbHelper.seedUserExercises(email);
 
         Toast.makeText(requireContext(),

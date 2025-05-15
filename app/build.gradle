@@ -58,6 +58,8 @@ dependencies {
     implementation libs.google.firebase.auth
     implementation libs.playServicesAuth
 
+    implementation libs.okhttp
+
 
     implementation libs.preference
     implementation libs.material

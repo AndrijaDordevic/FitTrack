@@ -6,7 +6,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;           // <-- now a Button
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -43,12 +43,12 @@ public class SignUpFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_sign_up, container, false);
 
-        // 1) Firebase & DB
+        // Initialize Firebase Auth and local DB helper
         mAuth = FirebaseAuth.getInstance();
         UserSession.init(requireContext());
         db    = UserSession.getDbHelper();
 
-        // 2) Google Sign-in client
+        // Configure Google Sign-In to request ID token and email
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(
                 GoogleSignInOptions.DEFAULT_SIGN_IN
         )
@@ -57,18 +57,19 @@ public class SignUpFragment extends Fragment {
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(requireContext(), gso);
 
-        // 3) Find views
+        // Bind UI elements
         emailEt         = v.findViewById(R.id.emailEditText);
         userEt          = v.findViewById(R.id.usernameEditText);
         passEt          = v.findViewById(R.id.passwordEditText);
         signUpBtn       = v.findViewById(R.id.signUpButton);
-        googleSignUpBtn = v.findViewById(R.id.googleSignInButton);  // regular Button
+        googleSignUpBtn = v.findViewById(R.id.googleSignInButton);
         progressBar     = v.findViewById(R.id.progressBar);
 
-        // 4) Hook up listeners
+        // Set click listeners for signup actions
         signUpBtn.setOnClickListener(view -> registerUser());
         googleSignUpBtn.setOnClickListener(vv -> signInWithGoogle());
 
+        // Handle back navigation
         v.findViewById(R.id.btnBack)
                 .setOnClickListener(back ->
                         NavHostFragment.findNavController(SignUpFragment.this)
@@ -78,6 +79,7 @@ public class SignUpFragment extends Fragment {
         return v;
     }
 
+    // Register new user with email/password and navigate to profile setup
     private void registerUser() {
         String email    = emailEt.getText().toString().trim();
         String username = userEt.getText().toString().trim();
@@ -87,21 +89,24 @@ public class SignUpFragment extends Fragment {
             return;
         }
 
+        // Show progress and create Firebase account
         progressBar.setVisibility(View.VISIBLE);
         mAuth.createUserWithEmailAndPassword(email, pass)
                 .addOnCompleteListener(requireActivity(), task -> {
                     progressBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
-                        // mirror into local DB
+                        // Mirror new user locally
                         db.addUser(email, username, "");
                         Toast.makeText(getContext(), "Registration successful!", Toast.LENGTH_SHORT).show();
 
+                        // Pass email and username to profile setup
                         Bundle args = new Bundle();
                         args.putString("email",    email);
                         args.putString("username", username);
                         NavHostFragment.findNavController(this)
                                 .navigate(R.id.action_signup_to_profile, args);
                     } else {
+                        // Show error message
                         Toast.makeText(getContext(),
                                 "Registration failed: " + task.getException().getMessage(),
                                 Toast.LENGTH_LONG).show();
@@ -109,6 +114,7 @@ public class SignUpFragment extends Fragment {
                 });
     }
 
+    // Start Google Sign-In intent
     private void signInWithGoogle() {
         startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_SIGN_IN);
     }
@@ -116,6 +122,7 @@ public class SignUpFragment extends Fragment {
     @Override public void onActivityResult(int req, int res, @Nullable Intent data) {
         super.onActivityResult(req, res, data);
         if (req == RC_SIGN_IN) {
+            // Handle Google Sign-In result
             Task<GoogleSignInAccount> task = GoogleSignIn
                     .getSignedInAccountFromIntent(data);
             try {
@@ -129,6 +136,7 @@ public class SignUpFragment extends Fragment {
         }
     }
 
+    // Authenticate with Firebase using Google credentials
     private void firebaseAuthWithGoogle(String idToken) {
         progressBar.setVisibility(View.VISIBLE);
         mAuth.signInWithCredential(GoogleAuthProvider
@@ -139,9 +147,11 @@ public class SignUpFragment extends Fragment {
                         String email    = mAuth.getCurrentUser().getEmail();
                         String username = mAuth.getCurrentUser().getDisplayName();
 
+                        // Ensure user exists locally
                         if (!db.checkUser(email, "")) {
                             db.addUser(email, username, "");
                         }
+                        // Preload exercises then proceed
                         db.seedUserExercises(email);
 
                         Bundle args = new Bundle();
@@ -153,6 +163,7 @@ public class SignUpFragment extends Fragment {
                         Toast.makeText(getContext(),
                                 "Google sign-in successful!", Toast.LENGTH_SHORT).show();
                     } else {
+                        // Authentication error
                         Toast.makeText(getContext(),
                                 "Authentication Failed: " + t.getException().getMessage(),
                                 Toast.LENGTH_SHORT).show();
