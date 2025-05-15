@@ -27,6 +27,7 @@ profileinstaller = "1.4.1"
 navigationFragment = "2.8.9"
 navigationUi = "2.8.9"
 threetenabp = "1.4.5"
+okhttp = "4.10.0"
 
 [libraries]
 appcompat-v161 = { module = "androidx.appcompat:appcompat", version.ref = "appcompatVersion" }
@@ -61,6 +62,8 @@ profileinstaller = { module = "androidx.profileinstaller:profileinstaller", vers
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
 threetenabp = { module = "com.jakewharton.threetenabp:threetenabp", version.ref = "threetenabp" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
