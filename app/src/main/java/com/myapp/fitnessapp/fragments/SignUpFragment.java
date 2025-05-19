@@ -59,7 +59,6 @@ public class SignUpFragment extends Fragment {
 
         // Bind UI elements
         emailEt         = v.findViewById(R.id.emailEditText);
-        userEt          = v.findViewById(R.id.usernameEditText);
         passEt          = v.findViewById(R.id.passwordEditText);
         confirmPassEt   = v.findViewById(R.id.confirmPasswordEditText);
         signUpBtn       = v.findViewById(R.id.signUpButton);
@@ -83,11 +82,10 @@ public class SignUpFragment extends Fragment {
     // Register new user with email/password and navigate to profile setup
     private void registerUser() {
         String email         = emailEt.getText().toString().trim();
-        String username      = userEt.getText().toString().trim();
         String pass          = passEt.getText().toString().trim();
         String confirmPass   = confirmPassEt.getText().toString().trim(); // <-- New line
 
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(username) || TextUtils.isEmpty(pass) || TextUtils.isEmpty(confirmPass)) {
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(pass) || TextUtils.isEmpty(confirmPass)) {
             Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -104,13 +102,11 @@ public class SignUpFragment extends Fragment {
                     progressBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
                         // Mirror new user locally
-                        db.addUser(email, username, "");
+                        db.addUser(email, "");
                         Toast.makeText(getContext(), "Registration successful!", Toast.LENGTH_SHORT).show();
 
-                        // Pass email and username to profile setup
                         Bundle args = new Bundle();
                         args.putString("email",    email);
-                        args.putString("username", username);
                         NavHostFragment.findNavController(this)
                                 .navigate(R.id.action_signup_to_profile, args);
                     } else {
@@ -153,18 +149,16 @@ public class SignUpFragment extends Fragment {
                     progressBar.setVisibility(View.GONE);
                     if (t.isSuccessful()) {
                         String email    = mAuth.getCurrentUser().getEmail();
-                        String username = mAuth.getCurrentUser().getDisplayName();
 
                         // Ensure user exists locally
                         if (!db.checkUser(email, "")) {
-                            db.addUser(email, username, "");
+                            db.addUser(email, "");
                         }
                         // Preload exercises then proceed
                         db.seedUserExercises(email);
 
                         Bundle args = new Bundle();
                         args.putString("email",    email);
-                        args.putString("username", username);
                         NavHostFragment.findNavController(this)
                                 .navigate(R.id.action_signup_to_profile, args);
 

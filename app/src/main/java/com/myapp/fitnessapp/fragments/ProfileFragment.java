@@ -294,6 +294,14 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
+        // Age range validation (15-130)
+        if (age < 15 || age > 130) {
+            Toast.makeText(requireContext(),
+                    "Age must be between 15 and 130",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         DBHelper db = UserSession.getDbHelper();
         boolean ok = db.updateProfile(
                 userEmail,

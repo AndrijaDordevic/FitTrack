@@ -29,7 +29,6 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String TABLE_USERS       = "users";
     private static final String COLUMN_ID         = "id";
     private static final String COLUMN_EMAIL      = "email";
-    private static final String COLUMN_USERNAME   = "username";
     private static final String COLUMN_PASSWORD   = "password";
     private static final String COLUMN_FULL_NAME  = "full_name";
     private static final String COLUMN_AGE        = "age";
@@ -75,7 +74,6 @@ public class DBHelper extends SQLiteOpenHelper {
         // Create users table
         db.execSQL("CREATE TABLE IF NOT EXISTS users (" +
                 "id            INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "username      TEXT," +
                 "email         TEXT UNIQUE NOT NULL," +
                 "password      TEXT," +
                 "full_name     TEXT," +
@@ -278,11 +276,10 @@ public class DBHelper extends SQLiteOpenHelper {
      * Insert a new user into the database.
      * @return true if insertion was successful
      */
-    public boolean addUser(String email, String username, String password) {
+    public boolean addUser(String email, String password) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_EMAIL, email);
-        values.put(COLUMN_USERNAME, username);
         values.put(COLUMN_PASSWORD, password);
         long result = db.insert(TABLE_USERS, null, values);
         db.close();

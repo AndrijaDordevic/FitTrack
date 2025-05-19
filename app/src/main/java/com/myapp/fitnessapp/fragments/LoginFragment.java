@@ -168,7 +168,7 @@ public class LoginFragment extends Fragment {
 
         // Add user to local DB if not already present
         if (!dbHelper.checkUser(email, "")) {
-            dbHelper.addUser(email, name, "");
+            dbHelper.addUser(email, "");
         }
         // Prepare user's exercise data
         dbHelper.seedUserExercises(email);

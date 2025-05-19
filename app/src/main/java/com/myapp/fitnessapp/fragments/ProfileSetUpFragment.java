@@ -20,6 +20,8 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.myapp.fitnessapp.R;
@@ -48,7 +50,14 @@ public class ProfileSetUpFragment extends Fragment {
                                 && result.getData() != null
                                 && result.getData().getData() != null) {
                             imageUri = result.getData().getData();
-                            profileImageView.setImageURI(imageUri);
+                            // Display the selected image as a circle
+                            Glide.with(this)
+                                    .load(imageUri)
+                                    .placeholder(R.drawable.profile_icon)
+                                    .error(R.drawable.profile_icon)
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                    .circleCrop()
+                                    .into(profileImageView);
                         }
                     }
             );
@@ -59,14 +68,23 @@ public class ProfileSetUpFragment extends Fragment {
                     new ActivityResultContracts.TakePicturePreview(),
                     bitmap -> {
                         if (bitmap != null) {
-                            profileImageView.setImageBitmap(bitmap);
+                            // Display the taken image as a circle
+                            Glide.with(this)
+                                    .load(bitmap)
+                                    .placeholder(R.drawable.profile_icon)
+                                    .error(R.drawable.profile_icon)
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                    .circleCrop()
+                                    .into(profileImageView);
+                            imageUri = null; // No URI, but we could save bitmap if needed
                         }
                     }
             );
 
     public ProfileSetUpFragment() {}
 
-    @Nullable @Override
+    @Nullable
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
@@ -82,7 +100,7 @@ public class ProfileSetUpFragment extends Fragment {
         weightUnitGroup   = view.findViewById(R.id.weightUnitGroup);
         saveProfileButton = view.findViewById(R.id.save_profile_button);
 
-        // Initialize session and DB helper
+        // Initialise session and DB helper
         UserSession.init(requireContext());
 
         // Determine userEmail from args or Firebase
@@ -101,10 +119,12 @@ public class ProfileSetUpFragment extends Fragment {
             }
         }
 
-        // Prefill name if provided
-        if (args != null && args.getString("username") != null) {
-            fullNameEditText.setText(args.getString("username"));
-        }
+        // Set default profile icon as circular
+        Glide.with(this)
+                .load(R.drawable.profile_icon)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .circleCrop()
+                .into(profileImageView);
 
         // Show chooser for image source
         profileImageView.setOnClickListener(v -> showImageSourceDialog());
@@ -192,9 +212,9 @@ public class ProfileSetUpFragment extends Fragment {
                 .setTitle("Select profile image")
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {
-                        pickImageLauncher.launch(
-                                new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                        );
+                        Intent pick = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                        pick.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        pickImageLauncher.launch(pick);
                     } else {
                         takePictureLauncher.launch(null);
                     }
@@ -211,7 +231,21 @@ public class ProfileSetUpFragment extends Fragment {
                     Toast.LENGTH_SHORT).show();
             return;
         }
-        int age = Integer.parseInt(ageS);
+        int age;
+        try {
+            age = Integer.parseInt(ageS);
+        } catch (NumberFormatException e) {
+            Toast.makeText(requireContext(), "Invalid age format", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Age range check
+        if (age < 15 || age > 130) {
+            Toast.makeText(requireContext(),
+                    "Age must be between 15 and 130",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         saveProfileButton.setEnabled(false);
         DBHelper db = UserSession.getDbHelper();

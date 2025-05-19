@@ -71,7 +71,6 @@
         android:name="com.myapp.fitnessapp.fragments.ProfileSetUpFragment"
         tools:label="Profile Setup">
         <argument android:name="email"    app:argType="string" />
-        <argument android:name="username" app:argType="string" />
         <action
             android:id="@+id/action_profile_to_dashboard"
             app:destination="@id/dashboardFragment"
