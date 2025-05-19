@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- 1) Your App Theme -->
+    <!-- App Theme -->
     <style name="Theme.MyApplication" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/onPrimary</item>
@@ -12,16 +12,16 @@
         <item name="android:navigationBarColor">@color/colorNavBar</item>
         <item name="materialButtonStyle">@style/Widget.MyApplication.Button</item>
 
-        <!-- 2) Point to your custom BottomNav style -->
+        <!-- Custom BottomNav style -->
         <item name="bottomNavigationStyle">@style/Widget.MyApp.BottomNavigationView</item>
     </style>
 
-    <!-- 3) Custom BottomNavigationView style -->
+    <!-- Custom BottomNavigationView style -->
     <style name="Widget.MyApp.BottomNavigationView"
         parent="Widget.MaterialComponents.BottomNavigationView">
-        <!-- remove only the per‐item pill -->
+        <!-- removed the per‐item pill -->
         <item name="itemBackground">@null</item>
-        <!-- (optional) remove ripple if you don’t want the touch highlight -->
+        <!-- removed ripple -->
         <item name="rippleColor">@android:color/transparent</item>
     </style>
 

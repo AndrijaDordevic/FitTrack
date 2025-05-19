@@ -30,7 +30,7 @@ import com.myapp.fitnessapp.utils.UserSession;
 public class SignUpFragment extends Fragment {
     private static final int RC_SIGN_IN = 9001;
 
-    private EditText emailEt, userEt, passEt;
+    private EditText emailEt, userEt, passEt, confirmPassEt;
     private Button signUpBtn;
     private Button googleSignUpBtn;
     private ProgressBar progressBar;
@@ -61,6 +61,7 @@ public class SignUpFragment extends Fragment {
         emailEt         = v.findViewById(R.id.emailEditText);
         userEt          = v.findViewById(R.id.usernameEditText);
         passEt          = v.findViewById(R.id.passwordEditText);
+        confirmPassEt   = v.findViewById(R.id.confirmPasswordEditText);
         signUpBtn       = v.findViewById(R.id.signUpButton);
         googleSignUpBtn = v.findViewById(R.id.googleSignInButton);
         progressBar     = v.findViewById(R.id.progressBar);
@@ -81,11 +82,18 @@ public class SignUpFragment extends Fragment {
 
     // Register new user with email/password and navigate to profile setup
     private void registerUser() {
-        String email    = emailEt.getText().toString().trim();
-        String username = userEt.getText().toString().trim();
-        String pass     = passEt.getText().toString().trim();
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(username) || TextUtils.isEmpty(pass)) {
+        String email         = emailEt.getText().toString().trim();
+        String username      = userEt.getText().toString().trim();
+        String pass          = passEt.getText().toString().trim();
+        String confirmPass   = confirmPassEt.getText().toString().trim(); // <-- New line
+
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(username) || TextUtils.isEmpty(pass) || TextUtils.isEmpty(confirmPass)) {
             Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!pass.equals(confirmPass)) {
+            Toast.makeText(getContext(), "Passwords do not match", Toast.LENGTH_SHORT).show();
             return;
         }
 
