@@ -32,6 +32,7 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.myapp.fitnessapp.R;
 import com.myapp.fitnessapp.utils.UserSession;
 
+/** @noinspection ALL*/
 public class WelcomeFragment extends Fragment {
     private static final int RC_GOOGLE_SIGN_IN = 9001;
 
@@ -43,19 +44,19 @@ public class WelcomeFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        // 1) If Firebase has a live user, go straight in
+        // If a Firebase user is already signed in, navigate to dashboard
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser != null) {
             goToDashboard();
             return;
         }
-        // 2) Otherwise, check our UserSession
+        // Otherwise, check local session for stored email
         UserSession.init(requireContext());
         String email = UserSession.getEmail();
         if (email != null) {
             goToDashboard();
         }
-        // else: stay here
+        // Else: stay on welcome screen
     }
 
     @Nullable
@@ -63,12 +64,13 @@ public class WelcomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
+        // Inflate layout
         View view = inflater.inflate(R.layout.fragment_welcome, container, false);
 
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        // Configure Google Sign-In
+        // Configure Google Sign-In client
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(
                 GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -76,17 +78,17 @@ public class WelcomeFragment extends Fragment {
                 .build();
         googleSignInClient = GoogleSignIn.getClient(requireContext(), gso);
 
-        // “Sign up” nav
+        // Navigate to sign-up when sign-up button clicked
         view.findViewById(R.id.btn_signup).setOnClickListener(v ->
                 NavHostFragment.findNavController(this)
                         .navigate(R.id.action_welcome_to_signup)
         );
 
-        // Google sign-in
+        // Handle Google sign-in invocation
         Button googleBtn = view.findViewById(R.id.googleWelcomeButton);
         googleBtn.setOnClickListener(v -> startGoogleSignIn());
 
-        // “Already have an account? Log in”
+        // Make "Log in" text clickable to navigate to login screen
         TextView haveAccount = view.findViewById(R.id.tv_have_account);
         String text = "Already have an account? Log in";
         SpannableString ss = new SpannableString(text);
@@ -99,7 +101,7 @@ public class WelcomeFragment extends Fragment {
             @Override
             public void updateDrawState(@NonNull TextPaint ds) {
                 super.updateDrawState(ds);
-                ds.setColor(0xFF3399FF);
+                ds.setColor(0xFF3399FF); // Link color
                 ds.setUnderlineText(true);
             }
         }, 25, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -110,6 +112,7 @@ public class WelcomeFragment extends Fragment {
         return view;
     }
 
+    // Launch Google Sign-In flow
     private void startGoogleSignIn() {
         startActivityForResult(
                 googleSignInClient.getSignInIntent(),
@@ -123,6 +126,7 @@ public class WelcomeFragment extends Fragment {
                                  @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_GOOGLE_SIGN_IN) {
+            // Handle Google Sign-In result
             Task<GoogleSignInAccount> task =
                     GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
@@ -138,13 +142,14 @@ public class WelcomeFragment extends Fragment {
         }
     }
 
+    // Authenticate with Firebase using Google credentials
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential =
                 GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(requireActivity(), task -> {
                     if (task.isSuccessful()) {
-                        // No need to write prefs—UserSession.getEmail() will now return a non-null value
+                        // Successful sign-in to navigate
                         goToDashboard();
                     } else {
                         Toast.makeText(requireContext(),
@@ -155,6 +160,7 @@ public class WelcomeFragment extends Fragment {
                 });
     }
 
+    // Helper to navigate to dashboard
     private void goToDashboard() {
         NavHostFragment.findNavController(this)
                 .navigate(R.id.action_welcome_to_dashboard);

@@ -81,7 +81,7 @@ public class ProgressFragment extends Fragment {
         // 3) Loop categories
         List<String> categories = db.getAllCategories();
         for (String category : categories) {
-            // — Header
+            // Header
             TextView header = new TextView(requireContext());
             header.setText(category);
             header.setTextSize(20f);
@@ -95,7 +95,7 @@ public class ProgressFragment extends Fragment {
             header.setTextColor(tv.data);
             categoryContainer.addView(header);
 
-            // — Fetch logs
+            // Fetch logs
             List<WorkoutLogEntry> entries =
                     db.getLogEntriesByCategory(category, userEmail);
 
@@ -109,7 +109,7 @@ public class ProgressFragment extends Fragment {
                 continue;
             }
 
-            // — Aggregate
+            // Aggregate
             Set<String> sessions = new HashSet<>();
             int sumReps = 0;
             float maxLbs = 0f;
@@ -123,7 +123,7 @@ public class ProgressFragment extends Fragment {
             int totalSessions = sessions.size();
             double avgReps = sumReps / (double) entries.size();
 
-            // — Compute weight display
+            // Compute weight display
             float displayW = useKg
                     ? (maxLbs / 2.20462f)
                     : maxLbs;

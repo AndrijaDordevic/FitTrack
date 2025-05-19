@@ -36,10 +36,10 @@ public class ProfileSetUpFragment extends Fragment {
     private Uri imageUri;
     private String userEmail;
 
-    // Base metric values
     private double baseHeightCm = 0, baseWeightKg = 0;
     private boolean isTogglingHeight = false, isTogglingWeight = false;
 
+    // Launcher for gallery pick
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
@@ -53,6 +53,7 @@ public class ProfileSetUpFragment extends Fragment {
                     }
             );
 
+    // Launcher for camera capture
     private final ActivityResultLauncher<Void> takePictureLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.TakePicturePreview(),
@@ -71,7 +72,7 @@ public class ProfileSetUpFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_profile_setup, container, false);
 
-        // 1) Bind views
+        // Bind view components
         profileImageView  = view.findViewById(R.id.profile_image_view);
         fullNameEditText  = view.findViewById(R.id.full_name_edit_text);
         ageEditText       = view.findViewById(R.id.age_edit_text);
@@ -81,10 +82,10 @@ public class ProfileSetUpFragment extends Fragment {
         weightUnitGroup   = view.findViewById(R.id.weightUnitGroup);
         saveProfileButton = view.findViewById(R.id.save_profile_button);
 
-        // 2) Initialize session & shared DB helper
+        // Initialize session and DB helper
         UserSession.init(requireContext());
 
-        // 3) Determine the userEmail
+        // Determine userEmail from args or Firebase
         Bundle args = getArguments();
         if (args != null && args.getString("email") != null) {
             userEmail = args.getString("email");
@@ -93,21 +94,22 @@ public class ProfileSetUpFragment extends Fragment {
             if (fb != null && fb.getEmail() != null) {
                 userEmail = fb.getEmail();
             } else {
-                // no email → back to welcome
+                // Redirect if no user info
                 NavHostFragment.findNavController(this)
                         .navigate(R.id.action_global_welcomeFragment);
                 return view;
             }
         }
 
-        // 4) Prefill the username if provided
+        // Prefill name if provided
         if (args != null && args.getString("username") != null) {
             fullNameEditText.setText(args.getString("username"));
         }
 
+        // Show chooser for image source
         profileImageView.setOnClickListener(v -> showImageSourceDialog());
 
-        // TextWatchers update base metrics when user types
+        // Watch height input to update baseHeightCm
         heightEditText.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s,int st,int c,int a){}
             @Override public void onTextChanged(CharSequence s,int st,int b,int c){}
@@ -122,12 +124,13 @@ public class ProfileSetUpFragment extends Fragment {
                         String[] p = raw.split("\\.");
                         int ft = Integer.parseInt(p[0]);
                         int in = p.length>1 ? Integer.parseInt(p[1]) : 0;
-                        baseHeightCm = (ft*12 + in) * 2.54;
+                        baseHeightCm = (ft*12 + in)*2.54;
                     }
                 } catch (NumberFormatException ignore){}
             }
         });
 
+        // Watch weight input to update baseWeightKg
         weightEditText.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s,int st,int c,int a){}
             @Override public void onTextChanged(CharSequence s,int st,int b,int c){}
@@ -139,47 +142,50 @@ public class ProfileSetUpFragment extends Fragment {
                     if (weightUnitGroup.getCheckedRadioButtonId() == R.id.weightMetric) {
                         baseWeightKg = Double.parseDouble(raw);
                     } else {
-                        baseWeightKg = Double.parseDouble(raw) * 0.453592;
+                        baseWeightKg = Double.parseDouble(raw)*0.453592;
                     }
                 } catch (NumberFormatException ignore){}
             }
         });
 
-        // Unit toggles convert from base metric
-        heightUnitGroup.setOnCheckedChangeListener((g, id) -> {
+        // Toggle height units and convert display
+        heightUnitGroup.setOnCheckedChangeListener((g,id)->{
             isTogglingHeight = true;
             if (id == R.id.heightMetric) {
                 heightEditText.setHint("cm");
                 heightEditText.setText(String.valueOf((int) baseHeightCm));
             } else {
-                double inches = baseHeightCm / 2.54;
-                int ft = (int)(inches / 12);
-                int in = (int)(inches - ft * 12);
+                double inches = baseHeightCm/2.54;
+                int ft = (int)(inches/12);
+                int in = (int)(inches - ft*12);
                 heightEditText.setHint("ft.in");
-                heightEditText.setText(ft + "." + in);
+                heightEditText.setText(ft+"."+in);
             }
             heightEditText.setSelection(heightEditText.getText().length());
             isTogglingHeight = false;
         });
 
-        weightUnitGroup.setOnCheckedChangeListener((g, id) -> {
+        // Toggle weight units and convert display
+        weightUnitGroup.setOnCheckedChangeListener((g,id)->{
             isTogglingWeight = true;
             if (id == R.id.weightMetric) {
                 weightEditText.setHint("kg");
-                weightEditText.setText(String.format(Locale.US, "%.1f", baseWeightKg));
+                weightEditText.setText(String.format(Locale.US,"%.1f", baseWeightKg));
             } else {
-                double lbs = baseWeightKg / 0.453592;
+                double lbs = baseWeightKg/0.453592;
                 weightEditText.setHint("lb");
-                weightEditText.setText(String.format(Locale.US, "%.1f", lbs));
+                weightEditText.setText(String.format(Locale.US,"%.1f", lbs));
             }
             weightEditText.setSelection(weightEditText.getText().length());
             isTogglingWeight = false;
         });
 
+        // Save profile on button click
         saveProfileButton.setOnClickListener(v -> onSaveProfile());
         return view;
     }
 
+    // Show options for selecting or capturing image
     private void showImageSourceDialog() {
         String[] options = {"Choose from gallery", "Take a photo"};
         new AlertDialog.Builder(requireContext())
@@ -195,6 +201,7 @@ public class ProfileSetUpFragment extends Fragment {
                 }).show();
     }
 
+    // Validate inputs, update DB, seed exercises, and navigate
     private void onSaveProfile() {
         String name = fullNameEditText.getText().toString().trim();
         String ageS = ageEditText.getText().toString().trim();
@@ -206,24 +213,17 @@ public class ProfileSetUpFragment extends Fragment {
         }
         int age = Integer.parseInt(ageS);
 
-        // Disable button to prevent double submits
         saveProfileButton.setEnabled(false);
-
         DBHelper db = UserSession.getDbHelper();
         boolean success = db.updateProfile(
-                userEmail,
-                name,
-                age,
+                userEmail, name, age,
                 imageUri != null ? imageUri.toString() : null,
-                baseHeightCm,
-                baseWeightKg
+                baseHeightCm, baseWeightKg
         );
 
         if (success) {
-            // Seed exercises now that profile is set
+            // Populate user exercises then navigate
             UserSession.getDbHelper().seedUserExercises(userEmail);
-
-            // Navigate to Dashboard, popping this flow off the back stack
             NavOptions opts = new NavOptions.Builder()
                     .setPopUpTo(R.id.nav_graph, true)
                     .build();

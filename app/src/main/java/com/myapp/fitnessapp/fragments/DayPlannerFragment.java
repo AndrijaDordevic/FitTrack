@@ -53,11 +53,11 @@ public class DayPlannerFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1) Init session & DB
+        // Initialize user session and database helper
         UserSession.init(requireContext());
         db = UserSession.getDbHelper();
 
-        // 2) Figure out which user is signed in
+        // Determine signed-in user; if none, redirect to welcome screen
         userEmail = UserSession.getEmail();
         if (userEmail == null) {
             NavHostFragment.findNavController(this)
@@ -65,22 +65,21 @@ public class DayPlannerFragment extends Fragment {
             return;
         }
 
+        // Ensure user-specific exercises exist in the database
         db.seedUserExercises(userEmail);
 
-        // 3) Read dayName from args or default to today
+        // Retrieve dayName argument or default to current weekday
         if (getArguments() != null) {
             dayName = getArguments().getString("dayName");
         }
         if (TextUtils.isEmpty(dayName)) {
-            String[] days = {
-                    "SUNDAY","MONDAY","TUESDAY","WEDNESDAY",
-                    "THURSDAY","FRIDAY","SATURDAY"
-            };
+            String[] days = {"SUNDAY","MONDAY","TUESDAY","WEDNESDAY",
+                    "THURSDAY","FRIDAY","SATURDAY"};
             int dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
             dayName = days[dow - 1];
         }
 
-        // 4) PRELOAD this user’s exercises
+        // Load all available exercises for this user
         allExercises = new ArrayList<>();
         allExercises.add(new ExerciseItem(-1, "Rest", ""));
         Cursor c = db.getUserExercises(userEmail);
@@ -97,6 +96,7 @@ public class DayPlannerFragment extends Fragment {
             } while (c.moveToNext());
             c.close();
         }
+        // Sort exercises by category then name
         Collections.sort(allExercises, (a, b) -> {
             int cmp = a.getCategory().compareToIgnoreCase(b.getCategory());
             return cmp != 0
@@ -110,6 +110,7 @@ public class DayPlannerFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        // Inflate the fragment layout
         return inflater.inflate(R.layout.fragment_day_planner,
                 container, false);
     }
@@ -119,7 +120,7 @@ public class DayPlannerFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Bind UI
+        // Bind UI components to their views
         tvPlanName    = view.findViewById(R.id.textPlanName);
         tvInstructions= view.findViewById(R.id.tvInstructions);
         tvPromptAdd   = view.findViewById(R.id.tvPromptAdd);
@@ -129,7 +130,7 @@ public class DayPlannerFragment extends Fragment {
         btnSave       = view.findViewById(R.id.btnSaveDay);
         btnClear      = view.findViewById(R.id.btnClearPlanner);
 
-        // Rename on plan title click
+        // Allow renaming plan when tapping the title (only in summary mode)
         tvPlanName.setOnClickListener(v -> {
             if (!isInEditMode) {
                 List<Integer> selected = db.getDayPlan(userEmail, dayName);
@@ -137,7 +138,7 @@ public class DayPlannerFragment extends Fragment {
             }
         });
 
-        // SETUP category spinner from user_exercises
+        // Populate category filter spinner with distinct categories
         List<String> cats = new ArrayList<>();
         cats.add("All");
         Cursor cc = db.getReadableDatabase().rawQuery(
@@ -161,12 +162,12 @@ public class DayPlannerFragment extends Fragment {
         );
         spCategory.setAdapter(catAd);
 
-        // RecyclerView & Adapters
+        // Setup RecyclerView with adapters for edit and summary modes
         fullAdapter    = new DayExerciseAdapter(allExercises);
         summaryAdapter = new DayExerciseAdapter(new ArrayList<>());
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Initial mode
+        // Enter appropriate mode based on existing saved plan
         List<Integer> saved = db.getDayPlan(userEmail, dayName);
         if (saved.isEmpty()) {
             enterEditMode(saved);
@@ -174,30 +175,26 @@ public class DayPlannerFragment extends Fragment {
             enterSummaryMode(saved);
         }
 
-        // Save/Edit button
+        // Handle save/edit button clicks
         btnSave.setOnClickListener(v -> {
             if (isInEditMode) {
                 List<Integer> sel = fullAdapter.getSelectedIds();
 
-
-                // Save the day plan
+                // Persist the selected plan
                 db.saveDayPlan(userEmail, dayName, sel);
 
-                // Log sets & workouts
+                // Log detailed workout sets
                 for (int exerciseId : sel) {
-                    ExerciseItem exercise =
-                            findExerciseById(exerciseId);
+                    ExerciseItem exercise = findExerciseById(exerciseId);
                     if (exercise == null) continue;
 
                     int sets = exercise.getSets();
                     int reps = exercise.getReps();
                     float w  = exercise.getWeight();
-                    // skip if not fully populated
                     if (sets <= 0 || reps <= 0 || w <= 0f) {
-                        continue;
+                        continue; // skip incomplete entries
                     }
 
-                    // Persist each set
                     for (int sn = 1; sn <= sets; sn++) {
                         if (db.hasWorkoutSet(
                                 exerciseId, sn,
@@ -215,25 +212,24 @@ public class DayPlannerFragment extends Fragment {
                             );
                         }
                     }
-                    // Snapshot complete workout
+                    // Save a log entry snapshot
                     db.saveLogEntry(
                             userEmail, exerciseId,
                             dayName, sets, reps, w
                     );
                 }
+                // Prompt for plan name after saving
                 promptNameAndSwitch(sel);
 
             } else {
-                enterEditMode(
-                        db.getDayPlan(userEmail, dayName)
-                );
+                // Switch to edit mode from summary
+                enterEditMode(db.getDayPlan(userEmail, dayName));
             }
         });
 
-        // Clear button
+        // Clear entire planner and reset UI
         btnClear.setOnClickListener(v -> {
-            db.saveDayPlan(userEmail, dayName,
-                    new ArrayList<>());
+            db.saveDayPlan(userEmail, dayName, new ArrayList<>());
             db.savePlanName(userEmail, dayName, "");
             spCategory.setSelection(0);
             sv.setQuery("", false);
@@ -245,7 +241,7 @@ public class DayPlannerFragment extends Fragment {
             ).show();
         });
 
-        // Filters
+        // Filter exercises by category in edit mode
         spCategory.setOnItemSelectedListener(
                 new AdapterView.OnItemSelectedListener() {
                     @Override
@@ -265,20 +261,18 @@ public class DayPlannerFragment extends Fragment {
                         }
                     }
                     @Override
-                    public void onNothingSelected(
-                            AdapterView<?> parent) {}
+                    public void onNothingSelected(AdapterView<?> parent) {}
                 });
 
+        // Filter exercises by name in edit mode
         sv.setOnQueryTextListener(
                 new SearchView.OnQueryTextListener() {
                     @Override
-                    public boolean onQueryTextSubmit(
-                            String query) {
+                    public boolean onQueryTextSubmit(String query) {
                         return false;
                     }
                     @Override
-                    public boolean onQueryTextChange(
-                            String newText) {
+                    public boolean onQueryTextChange(String newText) {
                         if (isInEditMode) {
                             fullAdapter.filterByName(newText);
                         }
@@ -288,6 +282,7 @@ public class DayPlannerFragment extends Fragment {
 
     }
 
+    // Switch UI to edit mode with selection enabled
     private void enterEditMode(List<Integer> pre) {
         isInEditMode = true;
         btnSave.setText("Save");
@@ -302,6 +297,7 @@ public class DayPlannerFragment extends Fragment {
         rv.setAdapter(fullAdapter);
     }
 
+    // Switch UI to summary mode showing saved plan
     private void enterSummaryMode(List<Integer> ids) {
         isInEditMode = false;
         btnSave.setText("Edit");
@@ -336,6 +332,7 @@ public class DayPlannerFragment extends Fragment {
         rv.setAdapter(summaryAdapter);
     }
 
+    // Prompt user to name the workout plan and switch modes
     private void promptNameAndSwitch(List<Integer> selection) {
         AlertDialog.Builder builder =
                 new AlertDialog.Builder(requireContext());
@@ -377,12 +374,12 @@ public class DayPlannerFragment extends Fragment {
 
         builder.setNegativeButton(
                 "Skip",
-                (dialog, which) ->
-                        enterSummaryMode(selection)
+                (dialog, which) -> enterSummaryMode(selection)
         );
         builder.show();
     }
 
+    // Lookup an ExerciseItem by its ID
     private ExerciseItem findExerciseById(int id) {
         for (ExerciseItem item : allExercises) {
             if (item.getId() == id) {
@@ -395,6 +392,7 @@ public class DayPlannerFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        // Close database when view is destroyed to free resources
         db.close();
     }
 }

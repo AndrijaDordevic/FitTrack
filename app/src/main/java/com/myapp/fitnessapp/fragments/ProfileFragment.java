@@ -45,6 +45,7 @@ public class ProfileFragment extends Fragment {
     private double baseHeightCm = 0, baseWeightKg = 0;
     private boolean isTogglingHeight = false, isTogglingWeight = false;
 
+    // Launcher for image picker intent result
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
@@ -54,6 +55,7 @@ public class ProfileFragment extends Fragment {
                                 result.getData().getData() != null) {
 
                             Uri uri = result.getData().getData();
+                            // Persist permission across device restarts
                             requireActivity().getContentResolver()
                                     .takePersistableUriPermission(
                                             uri,
@@ -61,7 +63,7 @@ public class ProfileFragment extends Fragment {
                                     );
 
                             imageUri = uri;
-                            // show picked image
+                            // Load selected image into view with Glide
                             Glide.with(this)
                                     .load(imageUri)
                                     .placeholder(R.drawable.profile_icon)
@@ -79,6 +81,7 @@ public class ProfileFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_profile, container, false);
 
+        // Bind UI elements
         profileImageView = v.findViewById(R.id.profile_image_view);
         fullNameET       = v.findViewById(R.id.full_name_edit_text);
         ageET            = v.findViewById(R.id.age_edit_text);
@@ -88,22 +91,26 @@ public class ProfileFragment extends Fragment {
         weightUnitGroup  = v.findViewById(R.id.weight_unit_group);
         saveButton       = v.findViewById(R.id.save_button);
 
+        // Initialize session and check authenticated user
         UserSession.init(requireContext());
-
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null || firebaseUser.getEmail() == null) {
+            // Redirect to welcome if not logged in
             NavHostFragment.findNavController(this)
                     .navigate(R.id.action_global_welcomeFragment);
             return v;
         }
         userEmail = firebaseUser.getEmail();
 
+        // Round profile image view corners
         profileImageView.setClipToOutline(true);
 
+        // Load saved profile data, set up listeners and toggles
         loadProfile();
         setupTextWatchers();
         setupUnitToggles();
 
+        // Handle image click to pick new profile photo
         profileImageView.setOnClickListener(t -> {
             Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             pick.addCategory(Intent.CATEGORY_OPENABLE);
@@ -112,10 +119,12 @@ public class ProfileFragment extends Fragment {
             pickImageLauncher.launch(pick);
         });
 
+        // Save button persists changes
         saveButton.setOnClickListener(t -> saveProfile());
         return v;
     }
 
+    // Load profile from DB into UI, or reset if none exists
     private void loadProfile() {
         DBHelper db = UserSession.getDbHelper();
         Cursor c = db.getProfile(userEmail);
@@ -127,17 +136,14 @@ public class ProfileFragment extends Fragment {
 
             String uriStr = c.getString(c.getColumnIndexOrThrow("image_uri"));
             if (uriStr != null) {
+                // Handle file URI vs content URI
                 File f = new File(Uri.parse(uriStr).getPath());
-                if (f.exists()) {
-                    imageUri = Uri.fromFile(f);
-                } else {
-                    imageUri = Uri.parse(uriStr);
-                }
+                imageUri = f.exists() ? Uri.fromFile(f) : Uri.parse(uriStr);
             } else {
                 imageUri = null;
             }
 
-            // two separate Glide calls instead of a mismatched ternary
+            // Display profile image or placeholder
             if (imageUri != null) {
                 Glide.with(this)
                         .load(imageUri)
@@ -154,22 +160,22 @@ public class ProfileFragment extends Fragment {
                         .into(profileImageView);
             }
 
+            // Initialize height and weight fields in metric units
             heightUnitGroup.check(R.id.height_metric);
             heightET.setHint("cm");
-            heightET.setText(baseHeightCm > 0
-                    ? String.valueOf((int) baseHeightCm)
-                    : "");
+            heightET.setText(baseHeightCm > 0 ? String.valueOf((int) baseHeightCm) : "");
             weightUnitGroup.check(R.id.weight_metric);
             weightET.setHint("kg");
-            weightET.setText(baseWeightKg > 0
-                    ? String.format(Locale.US,"%.1f",baseWeightKg)
-                    : "");
+            weightET.setText(baseWeightKg > 0 ?
+                    String.format(Locale.US, "%.1f", baseWeightKg) : "");
         } else {
+            // No profile found: clear fields
             resetProfileFields();
         }
         if (c != null) c.close();
     }
 
+    // Watcher to update baseHeightCm as user edits height
     private void setupTextWatchers() {
         heightET.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s,int a,int b,int c){}
@@ -179,20 +185,20 @@ public class ProfileFragment extends Fragment {
                 String raw = s.toString().trim();
                 if (raw.isEmpty()) return;
                 try {
-                    if (heightUnitGroup.getCheckedRadioButtonId()
-                            == R.id.height_metric) {
+                    if (heightUnitGroup.getCheckedRadioButtonId() == R.id.height_metric) {
                         baseHeightCm = Double.parseDouble(raw);
                     } else {
+                        // Imperial input: ft.in (e.g., 5.11)
                         String[] parts = raw.split("\\.");
                         int ft = Integer.parseInt(parts[0]);
-                        int inch = parts.length>1
-                                ? Integer.parseInt(parts[1]) : 0;
-                        baseHeightCm = (ft*12 + inch)*2.54;
+                        int in = parts.length>1 ? Integer.parseInt(parts[1]) : 0;
+                        baseHeightCm = (ft*12 + in)*2.54;
                     }
                 } catch (NumberFormatException ignored){}
             }
         });
 
+        // Similar watcher for weight input
         weightET.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s,int a,int b,int c){}
             @Override public void onTextChanged(CharSequence s,int a,int b,int c){}
@@ -201,8 +207,7 @@ public class ProfileFragment extends Fragment {
                 String raw = s.toString().trim();
                 if (raw.isEmpty()) return;
                 try {
-                    if (weightUnitGroup.getCheckedRadioButtonId()
-                            == R.id.weight_metric) {
+                    if (weightUnitGroup.getCheckedRadioButtonId() == R.id.weight_metric) {
                         baseWeightKg = Double.parseDouble(raw);
                     } else {
                         baseWeightKg = Double.parseDouble(raw)*0.453592;
@@ -212,22 +217,20 @@ public class ProfileFragment extends Fragment {
         });
     }
 
+    // Handle unit toggle changes to convert and display values
     private void setupUnitToggles() {
         heightUnitGroup.setOnCheckedChangeListener((g,id)->{
             isTogglingHeight = true;
             if (id == R.id.height_metric) {
                 heightET.setHint("cm");
-                heightET.setText(baseHeightCm>0
-                        ? String.valueOf((int) baseHeightCm)
-                        : "");
+                heightET.setText(baseHeightCm>0 ?
+                        String.valueOf((int) baseHeightCm) : "");
             } else {
                 double inches = baseHeightCm/2.54;
                 int ft = (int)(inches/12);
-                int inch = (int)(inches - ft*12);
+                int in = (int)(inches - ft*12);
                 heightET.setHint("ft.in");
-                heightET.setText(baseHeightCm>0
-                        ? ft + "." + inch
-                        : "");
+                heightET.setText(baseHeightCm>0 ? ft + "." + in : "");
             }
             heightET.setSelection(heightET.getText().length());
             isTogglingHeight = false;
@@ -237,21 +240,20 @@ public class ProfileFragment extends Fragment {
             isTogglingWeight = true;
             if (id == R.id.weight_metric) {
                 weightET.setHint("kg");
-                weightET.setText(baseWeightKg>0
-                        ? String.format(Locale.US,"%.1f",baseWeightKg)
-                        : "");
+                weightET.setText(baseWeightKg>0 ?
+                        String.format(Locale.US, "%.1f", baseWeightKg) : "");
             } else {
                 double lbs = baseWeightKg/0.453592;
                 weightET.setHint("lb");
-                weightET.setText(baseWeightKg>0
-                        ? String.format(Locale.US,"%.1f",lbs)
-                        : "");
+                weightET.setText(baseWeightKg>0 ?
+                        String.format(Locale.US, "%.1f", lbs) : "");
             }
             weightET.setSelection(weightET.getText().length());
             isTogglingWeight = false;
         });
     }
 
+    // Reset UI to default placeholder state
     private void resetProfileFields() {
         Glide.with(this)
                 .load(R.drawable.profile_icon)
@@ -271,6 +273,7 @@ public class ProfileFragment extends Fragment {
         weightET.setText("");
     }
 
+    // Validate inputs and save profile to DB
     private void saveProfile() {
         String name = fullNameET.getText().toString().trim();
         String ageS = ageET.getText().toString().trim();
@@ -301,6 +304,7 @@ public class ProfileFragment extends Fragment {
                 baseWeightKg
         );
 
+        // Show result and navigate back on success
         Toast.makeText(requireContext(),
                 ok ? "Profile updated!" : "Update failed",
                 Toast.LENGTH_SHORT).show();

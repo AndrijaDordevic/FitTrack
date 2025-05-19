@@ -40,20 +40,30 @@ public class ExerciseLibraryFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_exercise_library, container, false);
 
+        // Initialize filter UI and recycler view
         filterSpinner = view.findViewById(R.id.spinnerFilter);
         recyclerView = view.findViewById(R.id.recyclerViewExercises);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new ExerciseAdapter();
         recyclerView.setAdapter(adapter);
 
-        // Reference to the bonus tip message TextView
+        // Bonus tip message shown after an exercise is clicked
         bonusTipMessage = view.findViewById(R.id.textBonusTipMessage);
 
-        // categories
-        List<String> cats = Arrays.asList("All", "Bicep", "Tricep", "Legs", "Shoulders", "Back", "Chest", "Abs");
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, cats);
+        // Setup category spinner with predefined categories
+        List<String> cats = Arrays.asList(
+                "All", "Bicep", "Tricep", "Legs",
+                "Shoulders", "Back", "Chest", "Abs"
+        );
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                cats
+        );
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         filterSpinner.setAdapter(spinnerAdapter);
+
+        // Load exercises when a category is selected
         filterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -62,7 +72,7 @@ public class ExerciseLibraryFragment extends Fragment {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                // Optional: do nothing
+                // No action needed
             }
         });
 
@@ -72,10 +82,13 @@ public class ExerciseLibraryFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // Initialize user session and database helper
         UserSession.init(requireContext());
         dbHelper = UserSession.getDbHelper();
     }
 
+    // Fetch exercises from DB, filtering by category and include tips
     private void loadExercises(String category) {
         Cursor c = "All".equals(category)
                 ? dbHelper.getAllExercisesWithTips()
@@ -90,25 +103,31 @@ public class ExerciseLibraryFragment extends Fragment {
                     c.getString(c.getColumnIndexOrThrow("tips"))
             ));
         }
-        c.close();
+        c.close();  // Always close cursor
         adapter.setExercises(list);
     }
 
-    // POJO for Exercise
+    // Simple POJO to hold exercise data
     private static class Exercise {
         int id;
         String name, category, tips;
-        Exercise(int id, String n, String c, String t) { this.id=id; this.name=n; this.category=c; this.tips=t; }
+        Exercise(int id, String n, String c, String t) {
+            this.id = id;
+            this.name = n;
+            this.category = c;
+            this.tips = t;
+        }
     }
 
-    // Adapter for RecyclerView
+    // RecyclerView adapter to display exercises and show tips dialog
     private class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.VH> {
         private final List<Exercise> list = new ArrayList<>();
 
         @NonNull
         @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_exercise, parent, false);
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_exercise, parent, false);
             return new VH(v);
         }
 
@@ -119,13 +138,14 @@ public class ExerciseLibraryFragment extends Fragment {
             holder.category.setText(ex.category);
 
             holder.itemView.setOnClickListener(v -> {
+                // Show an alert dialog with exercise tips
                 new AlertDialog.Builder(requireContext())
                         .setTitle(ex.name + " Tips")
                         .setMessage(ex.tips)
                         .setPositiveButton("OK", null)
                         .show();
 
-                // Show the bonus tip message
+                // Reveal bonus tip message if hidden
                 if (bonusTipMessage.getVisibility() != View.VISIBLE) {
                     bonusTipMessage.setVisibility(View.VISIBLE);
                 }
@@ -137,12 +157,14 @@ public class ExerciseLibraryFragment extends Fragment {
             return list.size();
         }
 
+        // Update adapter data and refresh list
         void setExercises(List<Exercise> data) {
             list.clear();
             list.addAll(data);
             notifyDataSetChanged();
         }
 
+        // ViewHolder for exercise item
         class VH extends RecyclerView.ViewHolder {
             TextView name, category;
             VH(View itemView) {

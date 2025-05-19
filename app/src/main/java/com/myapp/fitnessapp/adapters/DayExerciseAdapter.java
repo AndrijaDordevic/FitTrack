@@ -23,26 +23,33 @@ import java.util.Set;
 
 public class DayExerciseAdapter extends RecyclerView.Adapter<DayExerciseAdapter.ViewHolder> {
 
+    // Full dataset of exercises and current filtered subset
     private final List<ExerciseItem> fullList;
     private final List<ExerciseItem> filteredList;
+    // Track selected exercise IDs for edit mode
     private final Set<Integer> selectedIds = new HashSet<>();
     private boolean restOnly = false;
 
-
-    // NEW: control whether items are tappable/selectable
+    // Control whether tapping selects items or navigates
     private boolean selectionEnabled = true;
 
+    // Constructor: initialize lists
     public DayExerciseAdapter(@NonNull List<ExerciseItem> items) {
         this.fullList = new ArrayList<>(items);
         this.filteredList = new ArrayList<>(items);
     }
 
-    /** Enable or disable tapping to select/deselect items */
+    /**
+     * Enable/disable selection taps. In navigate mode, taps go to logging.
+     */
     public void setSelectionEnabled(boolean enabled) {
         this.selectionEnabled = enabled;
         notifyDataSetChanged();
     }
 
+    /**
+     * If restOnly, only include the "Rest" item in filtered list.
+     */
     public void setRestOnly(boolean restOnly) {
         this.restOnly = restOnly;
         filteredList.clear();
@@ -59,21 +66,22 @@ public class DayExerciseAdapter extends RecyclerView.Adapter<DayExerciseAdapter.
         notifyDataSetChanged();
     }
 
+    // Filter exercises by category, preserving "Rest"
     public void filterByCategory(String category) {
         if (restOnly) return;
         filteredList.clear();
         for (ExerciseItem e : fullList) {
-            if (!e.getName().equalsIgnoreCase("Rest")) {
-                if (category == null || e.getCategory().equalsIgnoreCase(category)) {
-                    filteredList.add(e);
-                }
-            } else {
+            if (!e.getName().equalsIgnoreCase("Rest") &&
+                    (category == null || e.getCategory().equalsIgnoreCase(category))) {
+                filteredList.add(e);
+            } else if (e.getName().equalsIgnoreCase("Rest")) {
                 filteredList.add(e);
             }
         }
         notifyDataSetChanged();
     }
 
+    // Filter exercises by name substring, preserving "Rest"
     public void filterByName(String query) {
         if (restOnly) return;
         String q = (query == null ? "" : query.trim().toLowerCase(Locale.ROOT));
@@ -86,6 +94,7 @@ public class DayExerciseAdapter extends RecyclerView.Adapter<DayExerciseAdapter.
         notifyDataSetChanged();
     }
 
+    // Return a copy of selected IDs
     @NonNull
     public List<Integer> getSelectedIds() {
         return new ArrayList<>(selectedIds);
@@ -96,105 +105,73 @@ public class DayExerciseAdapter extends RecyclerView.Adapter<DayExerciseAdapter.
         return filteredList.size();
     }
 
-    @NonNull @Override
-    public ViewHolder onCreateViewHolder(
-            @NonNull ViewGroup parent,
-            int viewType
-    ) {
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // Inflate item layout
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_exercise, parent, false);
         return new ViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(
-            @NonNull ViewHolder holder,
-            int position
-    ) {
-        bindTexts(holder, position);
-        bindSelection(holder, position);
-    }
-
-    @Override
-    public void onBindViewHolder(
-            @NonNull ViewHolder holder,
-            int position,
-            @NonNull List<Object> payloads
-    ) {
-        if (!payloads.isEmpty()) {
-            bindSelection(holder, position);
-        } else {
-            onBindViewHolder(holder, position);
-        }
-    }
-
-    private void bindTexts(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        // Bind texts and selection visuals
         ExerciseItem item = filteredList.get(position);
         holder.tvName.setText(item.getName());
         holder.tvCategory.setText(item.getCategory());
-    }
-
-    private void bindSelection(@NonNull ViewHolder holder, int position) {
-        ExerciseItem item = filteredList.get(position);
         boolean isSelected = selectedIds.contains(item.getId());
-
-        // Highlight if selected
         holder.itemView.setActivated(isSelected);
 
-        // Always allow clicks (we’ll branch in the listener)
+        // Always make clickable for ripple feedback
         holder.itemView.setClickable(true);
         holder.itemView.setFocusable(true);
-
-        // Re-apply the ripple foreground so you get touch feedback
         TypedValue outValue = new TypedValue();
         holder.itemView.getContext().getTheme()
                 .resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
         holder.itemView.setForeground(
-                ContextCompat.getDrawable(holder.itemView.getContext(), outValue.resourceId)
-        );
+                ContextCompat.getDrawable(holder.itemView.getContext(), outValue.resourceId));
     }
 
-
-    /** Replace current selection with this new list, then redraw */
+    /**
+     * Replace selection set and refresh visuals
+     */
     public void setSelectedIds(@NonNull List<Integer> ids) {
         selectedIds.clear();
         selectedIds.addAll(ids);
         notifyDataSetChanged();
     }
 
-
-
+    // ViewHolder sets up click behavior
     class ViewHolder extends RecyclerView.ViewHolder {
-        final TextView tvName;
-        final TextView tvCategory;
+        final TextView tvName, tvCategory;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName     = itemView.findViewById(R.id.textExerciseName);
             tvCategory = itemView.findViewById(R.id.textExerciseCategory);
 
+            // Handle taps for selection or navigation
             itemView.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
-
                 ExerciseItem clicked = filteredList.get(pos);
-
                 if (!selectionEnabled) {
-                    // NAVIGATION MODE: go to ExerciseLoggingFragment by its destination ID
+                    // Navigate to logging fragment
                     Bundle bundle = new Bundle();
                     bundle.putInt("exerciseId", clicked.getId());
                     Navigation.findNavController(v)
                             .navigate(R.id.exerciseLoggingFragment, bundle);
                 } else {
-                    // EDIT MODE: toggle selection
+                    // Toggle selection
                     int id = clicked.getId();
                     if (selectedIds.contains(id)) {
                         selectedIds.remove(id);
                     } else {
                         selectedIds.add(id);
                     }
-                    // Only re-bind that one item
-                    notifyItemChanged(pos, /* payload */ new Object());
+                    // Refresh only this item
+                    notifyItemChanged(pos);
                 }
             });
         }
