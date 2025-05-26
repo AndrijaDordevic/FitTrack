@@ -29,7 +29,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="16dp" />
 
-    <!-- Your existing add/remove/save buttons & sets list -->
+    <!-- add/remove/save buttons & sets list -->
     <LinearLayout
         android:id="@+id/layoutSetsContainer"
         android:orientation="vertical"

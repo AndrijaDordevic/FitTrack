@@ -75,7 +75,7 @@ public class ExerciseLoggingFragment extends Fragment {
             return;
         }
 
-        // 3) Load your “kg” toggle from prefs
+        // 3) Load “kg” toggle from prefs
         useKg = PreferenceManager
                 .getDefaultSharedPreferences(requireContext())
                 .getBoolean("use_kg", false);

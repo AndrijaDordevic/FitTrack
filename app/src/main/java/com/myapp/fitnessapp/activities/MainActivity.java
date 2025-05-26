@@ -54,14 +54,14 @@ public class MainActivity extends AppCompatActivity {
         // Navigation bar: transparent background, only buttons remain
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
 
-        // 2) Init your session helper
+        // 2) Init session helper
         UserSession.init(this);
 
         // 3) Check Firebase + local session
         FirebaseUser fbUser  = FirebaseAuth.getInstance().getCurrentUser();
         String    localEmail = UserSession.getEmail();  // "" if none saved
 
-        // 4) Inflate your main layout
+        // 4) Inflate main layout
         setContentView(R.layout.activity_main);
 
         // 5) NavController setup & dynamic start destination

@@ -48,7 +48,7 @@ public class DashboardFragment extends Fragment {
         // 1) Navigation controller
         navController = NavHostFragment.findNavController(this);
 
-        // 2) Find your cards & timer
+        // 2) Find cards & timer
         cardExerciseLibrary  = view.findViewById(R.id.cardExerciseLibrary);
         cardWorkoutPlanner   = view.findViewById(R.id.cardWorkoutPlanner);
         cardProgress         = view.findViewById(R.id.cardProgress);
